@@ -12,7 +12,7 @@ func from_mixin prop -> mixinname.
 from_mixin (from _ X _) X.
 
 func from_builder prop -> term.
-from_builder (from _ _ X) (global X).
+from_builder (from _ _ GR) X :- coq.env.global GR X.
 
 func mixin-src_mixin prop -> mixinname.
 mixin-src_mixin (mixin-src _ M _) M.
@@ -59,7 +59,7 @@ instance-to-export_instance-nice (instance-to-export _ M _) M.
 func abbrev-to-export_name prop -> id.
 abbrev-to-export_name (abbrev-to-export _ N _) N.
 func abbrev-to-export_body prop -> term.
-abbrev-to-export_body (abbrev-to-export _ _ B) (global B).
+abbrev-to-export_body (abbrev-to-export _ _ GR) B :- coq.env.global GR B.
 
 func clause-to-export_clause prop -> prop.
 clause-to-export_clause (clause-to-export _ C) C.
@@ -111,11 +111,13 @@ factory-provides.one Params T B M (triple M PL T) :- std.do! [
 func extract-conclusion-params term, term -> list term.
 extract-conclusion-params TheType (prod _ S T) R :- !,
   @pi-decl _ S x\ extract-conclusion-params TheType (T x) R.
-extract-conclusion-params TheType (app [global GR|Args]) R :- !, std.do! [
+extract-conclusion-params TheType Tm R :-
+  coq.safe-dest-global-app Tm GR Args, !, std.do! [
   std.assert-ok! (factory-alias->gref GR Factory) "HB",
   factory->nparams Factory NP,
   std.map Args (copy-pack-holes TheType TheType) NewArgs,
-  std.take NP NewArgs R].
+  std.take NP NewArgs R
+  ].
 extract-conclusion-params TheType T R :- whd1 T T1, !, extract-conclusion-params TheType T1 R.
 
 
@@ -316,22 +318,23 @@ assert-good-coverage! MLSortedRev CNL :- std.do! [
 
 % [get-structure-coercion S1 S2 F] finds the coecion F from the structure S1 to S2
 func get-structure-coercion structure, structure -> term.
-get-structure-coercion S T (global F) :-
+get-structure-coercion S T Out :-
   coq.coercion.db-for (grefclass S) (grefclass T) L,
-  if (L = [pr F _]) true (coq.error "No one step coercion from" S "to" T).
+  if (L = [pr F _]) true (coq.error "No one step coercion from" S "to" T),
+  coq.env.global F Out.
 
 func get-structure-sort-projection structure -> term.
 get-structure-sort-projection (indt S) Proj :- !,
   coq.env.projections S L,
   if (L = [some P, _]) true (coq.error "No canonical sort projection for" S),
-  Proj = global (const P).
+  coq.env.global (const P) Proj.
 get-structure-sort-projection S _ :- coq.error "get-structure-sort-projection: not a structure" S.
 
 func get-structure-class-projection structure -> term.
 get-structure-class-projection (indt S) T :- !,
   coq.env.projections S L,
   if (L = [_, some P]) true (coq.error "No canonical class projection for" S),
-  T = global (const P).
+  coq.env.global (const P) T.
 get-structure-class-projection S _ :- coq.error "get-structure-class-projection: not a structure" S.
 
 func get-constructor gref -> gref.
@@ -355,17 +358,15 @@ has-cs-instance GTy (cs-instance _ (cs-gref GTy) _).
 
 
 func mixin-src->has-mixin-instance prop -> prop.
-mixin-src->has-mixin-instance  (mixin-src (global GR) M I) (has-mixin-instance (cs-gref GR) M IHd) :-
-  term->gref I IHd.
-
-mixin-src->has-mixin-instance (mixin-src (app [global GR|_] ) M I) (has-mixin-instance (cs-gref GR) M IHd) :-
-  term->gref I IHd.
-
 mixin-src->has-mixin-instance (mixin-src (prod _ _ _ ) M I) (has-mixin-instance cs-prod M IHd):-
   term->gref I IHd.
 
 mixin-src->has-mixin-instance (mixin-src (sort U) M I) (has-mixin-instance (cs-sort U) M IHd):-
   term->gref I IHd.
+
+mixin-src->has-mixin-instance  (mixin-src Src M I) (has-mixin-instance (cs-gref GR) M IHd) :- !,
+  coq.safe-dest-global-app Src GR _, !, term->gref I IHd.
+
 
 % this auxiliary function iterates over the list of arguments of an application,
 % and create the necessary unify condition for each arguments
@@ -408,7 +409,7 @@ mixin-instance-type->mixin-src (prod N_ _ F) M I Cond (pi a \ C a) :-
 
 func has-mixin-instance->mixin-src prop -> prop.
 has-mixin-instance->mixin-src (has-mixin-instance _ M IHd) C :- std.do![
-  T = global IHd,
+  coq.env.global IHd T,
   coq.env.typeof IHd Ty,
   mixin-instance-type->mixin-src Ty M T [] C,
 ].
@@ -441,7 +442,7 @@ structure-nparams Structure NParams :-
 func factory? term -> w-args factoryname.
 factory? S (triple F Params T) :-
   not (var S), !,
-  safe-dest-app S (global GR) Args,
+  coq.safe-dest-global-app S GR Args,
   factory-alias->gref GR F ok,
   factory->nparams F NP, !,
   std.split-at NP Args Params [T|_].
