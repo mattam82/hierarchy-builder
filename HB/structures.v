@@ -1,6 +1,6 @@
 (* Support constants, to be kept in sync with shim/structures.v *)
 From Corelib Require Import ssreflect ssrfun.
-Set Universe Polymotphism.
+Set Universe Polymorphism.
 
 Add Search Blacklist "Builders_".
 Add Search Blacklist "__canonical__".
