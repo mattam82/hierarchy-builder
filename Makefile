@@ -94,7 +94,6 @@ distclean: sub-distclean this-distclean
 .PHONY: this-config this-build this-only this-test-suite this-test-suite-stdlib this-distclean this-clean
 
 this-build:: this-config Makefile.coq
-	cd ../coq-elpi && opam install ./rocq-elpi.opam --ignore-constraints-on=rocq-core
 	+$(COQMAKE)
 
 this-only:: this-config Makefile.coq
