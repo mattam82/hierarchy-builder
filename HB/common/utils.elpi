@@ -50,17 +50,17 @@ argument->gref (str S) GR :- !, located->gref S {coq.locate-all S} GR.
 argument->gref X _ :- coq.error "Argument" X "is expected to be a string".
 
 func argument->term argument -> term.
-argument->term (str S) (global GR) :- !, argument->gref (str S) GR.
+argument->term (str S) T :- !, argument->gref (str S) GR, coq.env.global GR T.
 argument->term (trm T) T1 :- !, std.assert-ok! (coq.elaborate-skeleton T _ T1) "not well typed term".
 argument->term X _ :- coq.error "Argument" X " is expected to be a term or a string".
 
 func argument->ty argument -> term.
-argument->ty (str S) T1 :- !, argument->gref (str S) GR, std.assert-ok! (coq.elaborate-ty-skeleton (global GR) _ T1) "global reference is not a type".
+argument->ty (str S) T1 :- !, argument->gref (str S) GR, coq.env.global GR T, std.assert-ok! (coq.elaborate-ty-skeleton T _ T1) "global reference is not a type".
 argument->ty (trm T) T1 :- !, std.assert-ok! (coq.elaborate-ty-skeleton T _ T1) "not well typed type".
 argument->ty X _ :- coq.error "Argument" X " is expected to be a type or a string".
 
 func builder->string builder -> string.
-builder->string (builder _ _ _ B) S :- coq.term->string (global B) S.
+builder->string (builder _ _ _ B) S :- coq.env.global B T, coq.term->string T S.
 
 func nice-gref->string gref -> string.
 nice-gref->string X Mod :-
@@ -68,7 +68,8 @@ nice-gref->string X Mod :-
   std.rev Path [Mod1,Mod2|_], !,
   Mod is Mod2 ^ "_" ^ Mod1.
 nice-gref->string X S :-
-  coq.term->string (global X) S.
+  coq.env.global X T,
+  coq.term->string T S.
 
 func gref->modname gref, int, string -> string.
 gref->modname GR NComp Sep ModName :-
