@@ -307,7 +307,6 @@ declare-instance Factory T F Clauses CFL CSL :-
 
 func clauses-for-export list (pair id constant) -> list prop.
 clauses-for-export CL ECL :-
-   coq.say "DONE",
    if (get-option "export" tt)
      (coq.env.current-library File,
       std.map CL (x\r\ sigma i c\ x = pr i c, r = instance-to-export File i c) ECL)
