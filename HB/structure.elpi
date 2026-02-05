@@ -209,14 +209,14 @@ clean-op-ty [exported-op _ Po C|Ops] S T1 T2 :-
   % TODO: refactor
   [(pi L L1 L2 Params Rest PoArgs\
     (copy (app [global (const Po)| L]) (app [global (const C) | L2]) :-
-      std.split-at NParams L Params [_|Rest],
+      !, std.split-at NParams L Params [_|Rest],
       std.drop NMixins Rest PoArgs,
       std.append Params [S|PoArgs] L1,
       std.map L1 copy L2)),
    (pi Tm UI L L1 L2 Params Rest PoArgs\
     (copy (app [pglobal (const Po) UI | L]) (app [Tm | L2]) :-
+      !, std.split-at NParams L Params [_|Rest],
       coq.env.global (const C) Tm,
-      std.split-at NParams L Params [_|Rest],
       std.drop NMixins Rest PoArgs,
       std.append Params [S|PoArgs] L1,
       std.map L1 copy L2))]
@@ -303,7 +303,7 @@ mk-coe-class-body FC TC TMLwP Params T _ CoeBody :- std.do! [
   std.map Builders (x\r\ sigma G\ coq.env.global x G, mk-app G Params r) BuildersP,
 
   factory->nparams TC TCNP,
-  mk-app (coq.env.global {get-constructor TC})
+  mk-app ({coq.env.global {get-constructor TC}})
     {coq.mk-n-holes TCNP} KCHoles,
 
   (pi c\ sigma Mixes\

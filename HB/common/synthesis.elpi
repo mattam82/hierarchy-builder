@@ -44,8 +44,8 @@ infer-holes-depending-on-params T (app [G|Args]) (app [G|Args1]) :-
 infer-holes-depending-on-params _ X X.
 
 func class-of-phant term -> gref, gref, gref.
-class-of-phant (prod N T F) X Y Z :- @pi-decl N T x\ class-of-phant (F x) X Y Z.
-class-of-phant T Y Z X :- coq.safe-dest-global-app T GR _, class-def (class X GR _), !, get-constructor X Y, get-constructor GR Z.
+class-of-phant (prod N T F) X Y Z :- !, @pi-decl N T x\ class-of-phant (F x) X Y Z.
+class-of-phant T Y Z X :- !, coq.safe-dest-global-app T GR _, class-def (class X GR _), !, get-constructor X Y, get-constructor GR Z.
 
 func infer-holes-depending-on-pack term, term -> term.
 infer-holes-depending-on-pack T (app [G | Args]) S :-
