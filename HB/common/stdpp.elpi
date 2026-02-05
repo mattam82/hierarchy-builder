@@ -304,18 +304,8 @@ term->cs-pattern (sort U) (cs-sort U) :- !.
 term->cs-pattern T (cs-gref GR) :- coq.term->gref T GR, !.
 term->cs-pattern T _ :- coq.error T "HB database: is not a valid canonical key".
 
-
-% this one is in utils, maybe cs-pattern->name is not stdpp material
-pred gref->modname-label i:gref, i:int, i:string, o:string.
-
-pred cs-pattern->name i:cs-pattern, o:string.
-cs-pattern->name cs-prod "prod".
-cs-pattern->name (cs-sort _) "sort".
-cs-pattern->name cs-default "default".
-cs-pattern->name (cs-gref GR) Name :- gref->modname-label GR 1 "_" Name.
-
 % decompose [app (p?global X UI?)|Args] into X and Args, using @univdecl UI to store UI.
-pred coq.safe-dest-global-app i:term, o:gref, o:list term.
+func coq.safe-dest-global-app term -> gref, list term.
 coq.safe-dest-global-app Tm GR Args :- !, std.do![
     coq.safe-dest-app Tm Head Args,
     std.assert! (not(var Head)) "coq.safe-dest-global-app: flexible input term",

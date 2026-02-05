@@ -21,7 +21,7 @@ declare-abbrev Name (by-classname GR) Abbrev :-
   @global! => log.coq.notation.add-abbreviation Name 1 (fun _ _ t\ app[Tm, t]) tt Abbrev.
 declare-abbrev Name (by-phantabbrev Abbr) Abbrev :- std.do! [
   coq.notation.abbreviation-body Abbr Nargs AbbrTrm,
-  @global! => log.coq.notation.add-abbreviation Name Nargs AbbrTrm tt Abbrev.
+  @global! => log.coq.notation.add-abbreviation Name Nargs AbbrTrm tt Abbrev ].
 
 func argument->w-mixins argument -> w-mixins argument.
 argument->w-mixins (indt-decl Decl) (pr MLwP ArgwP) :- !, std.do! [

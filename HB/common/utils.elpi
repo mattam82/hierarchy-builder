@@ -94,7 +94,6 @@ cs-pattern->name (cs-sort _) "sort".
 cs-pattern->name cs-default "default".
 cs-pattern->name (cs-gref GR) Name :- gref->modname-label GR 1 "_" Name.
 
-
 func string->modpath string -> modpath.
 string->modpath S MP :-
   std.filter {coq.locate-all S} (l\l = loc-modpath _) L,
