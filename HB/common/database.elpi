@@ -358,14 +358,15 @@ has-cs-instance GTy (cs-instance _ (cs-gref GTy) _).
 
 
 func mixin-src->has-mixin-instance prop -> prop.
+mixin-src->has-mixin-instance  (mixin-src Src M I) (has-mixin-instance (cs-gref GR) M IHd) :- !,
+  coq.safe-dest-global-app Src GR _, !, term->gref I IHd.
+
 mixin-src->has-mixin-instance (mixin-src (prod _ _ _ ) M I) (has-mixin-instance cs-prod M IHd):-
   term->gref I IHd.
 
 mixin-src->has-mixin-instance (mixin-src (sort U) M I) (has-mixin-instance (cs-sort U) M IHd):-
   term->gref I IHd.
 
-mixin-src->has-mixin-instance  (mixin-src Src M I) (has-mixin-instance (cs-gref GR) M IHd) :- !,
-  coq.safe-dest-global-app Src GR _, !, term->gref I IHd.
 
 
 % this auxiliary function iterates over the list of arguments of an application,
