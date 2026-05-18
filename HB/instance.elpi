@@ -221,7 +221,7 @@ mk-factory-sort-deps AliasGR CSL :- std.do! [
   context.declare MLwPRaw MLwP SortParams SortKey SortMSL _,
   SortMSL => synthesis.infer-all-gref->deps SortParams SortKey GR FSort,
   log.coq.env.add-section-variable-noimplicits "f" FSort CF,
-  GCF = global (const CF),
+  coq.env.global (const CF) GCF,
   factory-sort (coercion GRFSort _ GR _),
   SortMSL => synthesis.infer-all-gref->deps SortParams SortKey GRFSort KSort,
   coq.mk-app KSort [GCF] KFSortEta,
@@ -229,7 +229,7 @@ mk-factory-sort-deps AliasGR CSL :- std.do! [
   std.length ML NMLArgs,
   coq.mk-n-holes NMLArgs SortMLHoles,
   std.append {std.append SortParams [SortKey|SortMLHoles]} [GCF] KFSortArgs,
-  coq.mk-app (global GRFSort) KFSortArgs KFSort,
+  coq.mk-app {coq.env.global GRFSort} KFSortArgs KFSort,
   std.assert-ok! (coq.unify-eq KFSortEta KFSort) "HB: KRSort not an app",
   std.map SortMSL
     (c\ o\ sigma m t\ c = mixin-src _ m t, o = mixin-src KFSort m t)
@@ -248,8 +248,8 @@ mk-factory-sort-factory AliasGR CFL CSL :- std.do! [
   log.coq.env.add-section-variable-noimplicits "f" FSort CF,
   std.length {list-w-params_list MLwP} NMLArgs,
   coq.mk-n-holes NMLArgs SortMLHoles,
-  GCF = global (const CF),
-  coq.mk-app (global GR) {std.append SortParams [GCF|SortMLHoles]} FGCF,
+  coq.env.global (const CF) GCF,
+  coq.mk-app {coq.env.global GR} {std.append SortParams [GCF|SortMLHoles]} FGCF,
   declare-const "_" GCF (arity FGCF) CFL CSL
 ].
 

@@ -207,19 +207,13 @@ clean-op-ty [exported-op _ Po C|Ops] S T1 T2 :-
   std.length {list-w-params_list MLwP} NMixins,
 
   % TODO: refactor
-  [(pi L L1 L2 Params Rest PoArgs\
-    (copy (app [global (const Po)| L]) (app [global (const C) | L2]) :-
-      !, std.split-at NParams L Params [_|Rest],
-      std.drop NMixins Rest PoArgs,
-      std.append Params [S|PoArgs] L1,
-      std.map L1 copy L2)),
-   (pi Tm UI L L1 L2 Params Rest PoArgs\
+  (pi Tm UI L L1 L2 Params Rest PoArgs\
     (copy (app [pglobal (const Po) UI | L]) (app [Tm | L2]) :-
       !, std.split-at NParams L Params [_|Rest],
       coq.env.global (const C) Tm,
       std.drop NMixins Rest PoArgs,
       std.append Params [S|PoArgs] L1,
-      std.map L1 copy L2))]
+      std.map L1 copy L2))
   =>
   clean-op-ty Ops S T1 T2.
 
