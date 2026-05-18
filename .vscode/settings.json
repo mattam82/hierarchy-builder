@@ -139,5 +139,6 @@
         "**/Makefile.test-suite.coq.conf": true,
         "**/.coqdeps.test-suite": true,
         "**/*.dot": true
-    }
+    },
+    "vsrocq.path": "../../_build/install/default/bin/vsrocqtop"
 }
