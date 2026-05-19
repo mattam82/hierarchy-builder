@@ -290,8 +290,8 @@ declare-mixin-or-factory MixinSrcClauses SectionCanonicalInstance
   % coq.univ.print,
 
   if (get-option "primitive" tt)
-    (@primitive! => log.coq.env.add-indt RDeclClosed R)
-    (log.coq.env.add-indt RDeclClosed R),
+    (@primitive! => @dropunivs! => log.coq.env.add-indt RDeclClosed R)
+    (@dropunivs! => log.coq.env.add-indt RDeclClosed R),
 
   log.coq.env.end-section-name Module, % We need to anyway declare the record inside the section
     % since closing the section purges the unused universe level we may have

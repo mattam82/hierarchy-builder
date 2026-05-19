@@ -25,7 +25,7 @@ with-attributes P :-
     att "non_forgetful_inheritance" bool,
     att "hnf" bool,
   ] Opts, !,
-  Opts => (save-docstring, P).
+  Opts =!=> (save-docstring, P).
 
 func if-verbose (func) -> .
 if-verbose P :- get-option "verbose" tt, !, P.
