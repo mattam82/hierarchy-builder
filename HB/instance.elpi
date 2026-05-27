@@ -422,8 +422,8 @@ hack-section-discharging B B.
 % unfolds the constant used for the phant abbreviation to avoid storing all
 % the phantom abstrctions and idfun that were used to trigger inference
 func optimize-body term -> term.
-optimize-body (app[Hd| Args]) Red :- coq.env.global (const C) Hd, (phant-abbrev _ (const C) _ ; (rex_match "phant_" {coq.gref->id (const C)})), !,
-  coq.env.const C (some B) _,
+optimize-body (app[pglobal (const C) Uinst| Args]) Red :- (phant-abbrev _ (const C) _ ; (rex_match "phant_" {coq.gref->id (const C)})), !,
+  @uinstance! Uinst =!=> coq.env.const C (some B) _,
   hd-beta B Args HD Stack,
   unwind HD Stack Red.
 optimize-body (let _ _ T x\x) Red :- !, optimize-body T Red.
