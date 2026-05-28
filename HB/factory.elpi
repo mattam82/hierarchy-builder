@@ -305,7 +305,9 @@ declare-mixin-or-factory MixinSrcClauses SectionCanonicalInstance
   factories-provide GRFSwP MLwP,
   w-params.nparams MLwP NParams,
   build-deps-for-projections R MLwP GRDepsClausesProjs,
-  GRDepsClauses = [gref->deps (indt R) MLwP, gref->deps (indc K) MLwP|GRDepsClausesProjs],
+  GRDepsClauses' = [gref->deps (indt R) MLwP, gref->deps (indc K) MLwP|GRDepsClausesProjs],
+
+  std.map GRDepsClauses' coq.elpi.abstract-clause-univs GRDepsClauses,
 
   % GRDepsClauses => mk-factory-sort MLwP (indt R) _ FactorySortCoe,
   % FactorySortCoe = coercion GRFSort _ _ _,
