@@ -44,8 +44,9 @@ declare Module BSkel Sort :- std.do! [
   ClassAlias = (factory-alias->gref ClassName ClassName ok),
   CurrentClass = (class ClassName Structure MLwP),
   ClassName = indt ClassInd, coq.env.indt ClassInd _ _ _ _ [ClassK] _,
-  GRDepsClauses =
+  GRDepsClauses' =
     [gref->deps (indt ClassInd) NilwP, gref->deps (indc ClassK) MLwP],
+  std.map GRDepsClauses' coq.elpi.abstract-clause-univs GRDepsClauses,
   std.map ML (m\ o\ o = mixin-class m ClassName) MixinMems,
   std.filter ML (m\ not (mixin->first-class m _)) NewMixins,
   std.map NewMixins (m\ r\ r = mixin->first-class m ClassName) MixinFirstClass,
