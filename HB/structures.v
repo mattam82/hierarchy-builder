@@ -502,7 +502,7 @@ actions N :-
   coq.elpi.accumulate current "export.db" (clause _ _ (module-to-export File E)).
 
 main [indt-decl D] :- !, record-decl->id D N, with-attributes (actions N).
-main [upoly-indt-decl D _] :- !, coq.say D, record-decl->id D N, coq.say N, with-attributes (actions N).
+main [upoly-indt-decl D _] :- !, record-decl->id D N, with-attributes (actions N).
 
 main _ :-
   coq.error "Usage: HB.mixin Record <MixinName> T & F A & … := { … }.".
