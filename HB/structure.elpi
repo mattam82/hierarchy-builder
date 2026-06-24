@@ -43,6 +43,7 @@ declare Module BSkel Sort :- std.do! [
   w-params.map MLwP (_\_\_\ mk-nil) NilwP,
   ClassAlias = (factory-alias->gref ClassName ClassName ok),
   CurrentClass = (class ClassName Structure MLwP),
+  coq.elpi.abstract-clause-univs (class-def CurrentClass) CurrentClassCL,
   ClassName = indt ClassInd, coq.env.indt ClassInd _ _ _ _ [ClassK] _,
   GRDepsClauses' =
     [gref->deps (indt ClassInd) NilwP, gref->deps (indc ClassK) MLwP],
@@ -62,7 +63,7 @@ declare Module BSkel Sort :- std.do! [
   phant.add-abbreviation "clone" PhClone _ _,
 
   if-verbose (coq.say {header} "declaring pack_ constant"),
-  (ClassAlias => class-def CurrentClass => GRDepsClauses => MixinMems =>
+  (ClassAlias => CurrentClassCL => GRDepsClauses => MixinMems =>
     w-params.then MLwP mk-fun mk-fun (private.pack-body ClassName) Pack),
   if-verbose (coq.say {header} "declaring pack_ constant =" Pack),
   std.assert-ok! (coq.typecheck Pack PackTy) "typechecking failure: pack_",
@@ -125,10 +126,12 @@ declare Module BSkel Sort :- std.do! [
     (coq.say "declare:" ClassName "should be an inductive", fail),
 
   if-verbose (coq.say {header} "accumulating various props"),
+
+  coq.elpi.abstract-clause-univs (gref->deps GRPack MLwP) GRPackCL,
   std.flatten [
       Factories, [is-structure Structure],
-      NewJoins, [class-def CurrentClass], GRDepsClauses,
-      [gref->deps GRPack MLwP], MixinMems, [StructKeyClause]
+      NewJoins, [CurrentClassCL], GRDepsClauses,
+      [GRPackCL], MixinMems, [StructKeyClause]
     ]
     NewClauses,
   acc-clauses current NewClauses,
