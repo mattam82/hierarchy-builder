@@ -52,7 +52,8 @@ infer-holes-depending-on-pack T (app [G | Args]) S :-
   coq.env.global GR G,
   ((coq.gref->id GR GRS, rex.match "phant.*" GRS /*TODO: phant-clone? GR N*/);
     pack? GR _),
-  coq.env.typeof GR Ty, class-of-phant Ty KC SC C,
+  G = pglobal _ Ui,
+  (@uinstance! Ui => coq.env.typeof GR Ty), class-of-phant Ty KC SC C,
   factory->nparams C N,
   std.take N Args Params, !,
   std.do! [
@@ -69,8 +70,10 @@ infer-holes-depending-on-pack _ X X.
 % if Diagnostic is ok, else X is unassigned
 func infer-all-args-let list term, term, gref -> term, diagnostic.
 infer-all-args-let Ps T GR X Diag :- std.do! [
-  coq.env.typeof GR Ty,
-  coq.mk-eta (-1) Ty {coq.env.global GR} EtaF,
+  coq.env.global GR GRI,
+  GRI = pglobal _ Ui,
+  (@uinstance! Ui => coq.env.typeof GR Ty),
+  coq.mk-eta (-1) Ty GRI EtaF,
   coq.subst-fun {std.append Ps [T]} EtaF FT,
   private.instantiate-all-args-let FT T X Diag,
 ].
