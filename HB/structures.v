@@ -8,9 +8,6 @@ Add Search Blacklist "__to__".
 Add Search Blacklist "_between_".
 Add Search Blacklist "_mixin".
 
-Variant phantom (T : Type) (p : T) : Prop :=  Phantom : phantom T p.
-
-(* Variant error_msg@{u} : Prop := NoMsg | IsNotCanonicallyA (x : Type@{u}). *)
 Variant error_msg : Prop := NoMsg | IsNotCanonicallyA (x : Type).
 Definition unify (T1 T2 : Type) (t1 : T1) (t2 : T2) (s : error_msg) :=
   phantom T1 t1 -> phantom T2 t2.
@@ -22,6 +19,8 @@ Definition new {T} (x : T) := x.
 Definition eta {T} (x : T) := x.
 Definition ignore {T} (x: T) := x.
 Definition ignore_disabled {T T'} (x : T) (x' : T') := x'.
+
+Cumulativity Transparent id_phant.
 
 (* ********************* structures ****************************** *)
 From elpi Require Import elpi.
