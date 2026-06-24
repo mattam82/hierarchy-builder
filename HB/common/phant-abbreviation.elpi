@@ -23,10 +23,32 @@ func add-abbreviation string, phant-term -> constant, abbreviation.
 add-abbreviation N (private.phant-term AL T1) C Abbrev :- std.do! [
   NC is "phant_" ^ N,
   std.assert-ok! (coq.elaborate-skeleton T1 TTy T) "add-abbreviation: T illtyped",
-  log.coq.env.add-const-noimplicits NC T TTy @transparent! C,
+  fix-abbrev T Tfix,
+  % coq.say "Defining fixeed phant abbreviation" Tfix,
+  log.coq.env.add-const-noimplicits NC Tfix TTy @transparent! C,
   private.build-abbreviation 0 {coq.env.global (const C)} AL NParams AbbrevT,
   @global! => log.coq.notation.add-abbreviation N NParams AbbrevT tt Abbrev,
 ].
+
+func fix-unify term -> term.
+fix-unify (app [Hd|Args]) Dest :- 
+     Hd = (pglobal {{:gref lib:hb.unify}} _),
+     Args = [Ty1, Ty2, T1, T2 | Rest], !,
+     coq.typecheck T1 InfTy1 ok, coq.unify-eq Ty1 InfTy1 ok,
+     coq.typecheck T2 InfTy2 ok, coq.unify-eq Ty2 InfTy2 ok,
+    %  coq.unify-eq Ty1 Ty2 ok,
+     coq.mk-app Hd [InfTy1, InfTy2, T1, T2| Rest] Dest.
+fix-unify X X.
+
+:index (1)
+func fix-abbrev term -> term.
+fix-abbrev (fun N T B) (fun N T R) :- !,
+  fix-unify T T',
+  @pi-decl N T' x\ fix-abbrev (B x) (R x).
+fix-abbrev (let N T X B) (let N T X R) :- !,
+  @pi-def N T X x\ fix-abbrev (B x) (R x).
+fix-abbrev End R :- End = R.
+
 
 % [of-gref WithCopy GR RealMixinArgs PT]
 % builds a phant-term taking all parameters,
