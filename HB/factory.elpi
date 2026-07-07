@@ -272,6 +272,20 @@ declare-asset Arg AssetKind :- std.do! [
   )
 ].
 
+func term-refresh-univs term -> term.
+term-refresh-univs T1 T2 :-
+  (pi GR X T\ copy (pglobal GR X) T :- !, coq.env.global GR T) => copy T1 T2.
+
+func list-w-params.map-params list-w-params A, (func term -> term) -> list-w-params A.
+list-w-params.map-params (w-params.cons N T L) F (w-params.cons N T' L1) :- !,
+  F T T', !,
+  @pi-parameter N T' p\
+    list-w-params.map-params (L p) F (L1 p).
+list-w-params.map-params (w-params.nil N TTy L) F (w-params.nil N TTy' L1) :- !,
+  F TTy TTy', !,
+  @pi-parameter N TTy' t\
+    std.map (L t) (std.map-triple (=) (x\ y\ std.map x F y) F) (L1 t).
+
 pred declare-mixin-or-factory i:list prop, i:list constant, i:list term, i:term,
   i:term, i:record-decl, i:list-w-params factoryname, i:id, i:asset.
 declare-mixin-or-factory MixinSrcClauses SectionCanonicalInstance
@@ -302,7 +316,9 @@ declare-mixin-or-factory MixinSrcClauses SectionCanonicalInstance
   @global! => log.coq.arguments.set-implicit (indt R) [[]],
   @global! => log.coq.arguments.set-implicit GRK [[]],
 
-  factories-provide GRFSwP MLwP,
+  list-w-params.map-params GRFSwP term-refresh-univs GRFSwPFix,
+  
+  factories-provide GRFSwPFix MLwP,
   w-params.nparams MLwP NParams,
   build-deps-for-projections R MLwP GRDepsClausesProjs,
   GRDepsClauses' = [gref->deps (indt R) MLwP, gref->deps (indc K) MLwP|GRDepsClausesProjs],
