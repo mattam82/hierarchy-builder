@@ -25,10 +25,9 @@ Notation U := Type.
 
 (* Base definition : raw categories = quivers *)
 HB.mixin Record IsQuiver C := { hom : C -> C -> U }.
-Unset Universe Checking.
+
 #[short(type="quiver")]
-HB.structure Definition Quiver : Set := { C of IsQuiver C }.
-Set Universe Checking.
+HB.structure Definition Quiver := { C of IsQuiver C }.
 
 Bind Scope cat_scope with quiver.
 Bind Scope cat_scope with hom.
@@ -55,10 +54,9 @@ HB.builders Context C & IsPreCat C.
   HB.instance Definition _ := Quiver_IsPreCat.Build C idmap comp.
 HB.end.
 
-Unset Universe Checking.
 #[short(type="precat")]
-HB.structure Definition PreCat : Set := { C of IsPreCat C }.
-Set Universe Checking.
+HB.structure Definition PreCat := { C of IsPreCat C }.
+
 
 Bind Scope cat_scope with precat.
 Arguments idmap {C} {a} : rename.
@@ -76,10 +74,8 @@ HB.mixin Record PreCat_IsCat C & PreCat C := {
   compoA : forall (a b c d : C) (f : a ~> b) (g : b ~> c) (h : c ~> d),
     f \; (g \; h) = (f \; g) \; h
 }.
-Unset Universe Checking.
 #[short(type="cat")]
-HB.structure Definition Cat : Set := { C of PreCat_IsCat C & IsPreCat C }.
-Set Universe Checking.
+HB.structure Definition Cat := { C of PreCat_IsCat C & IsPreCat C }.
 
 Bind Scope cat_scope with cat.
 Arguments compo1 {C a b} : rename.
@@ -101,6 +97,7 @@ HB.instance Definition _ := Cat.copy unit (discrete unit).
 
 HB.instance Definition _ := @IsPreCat.Build U (fun A B => A -> B)
   (fun a => idfun) (fun a b c (f : a -> b) (g : b -> c) => (g \o f)%function).
+
 HB.instance Definition _ := PreCat_IsCat.Build U (fun _ _ _ => erefl)
   (fun _ _ _ => erefl) (fun _ _ _ _ _ _ _ => erefl).
 
@@ -119,10 +116,9 @@ HB.mixin Record IsPreFunctor (C D : quiver) (F : C -> D) := {
    Fhom : forall (a b : C), (a ~> b) -> (F a ~> F b)
 }.
 
-Unset Universe Checking.
-HB.structure Definition PreFunctor (C D : quiver) : Set :=
+HB.structure Definition PreFunctor (C D : quiver) :=
   { F of IsPreFunctor C D F }.
-Set Universe Checking.
+
 HB.instance Definition _ := IsQuiver.Build quiver PreFunctor.type.
 
 Notation "F ^$" := (@Fhom _ _ F _ _)
@@ -149,12 +145,11 @@ HB.mixin Record PreFunctor_IsFunctor (C D : precat) (F : C -> D)
    Fcomp : forall (a b c : C) (f : a ~> b) (g : b ~> c),
       F <$> (f \; g) = F <$> f \; F <$> g;
 }.
-Unset Universe Checking.
 
 (* precat and cat have a quiver structure *)
-HB.structure Definition Functor (C D : precat) : Set :=
+HB.structure Definition Functor (C D : precat) :=
   { F of IsPreFunctor C D F & PreFunctor_IsFunctor C D F }.
-Set Universe Checking.
+
 HB.instance Definition _ := IsQuiver.Build precat Functor.type.
 HB.instance Definition _ := IsQuiver.Build cat Functor.type.
 
@@ -213,14 +208,18 @@ Proof. exact: Prop_irrelevance. Qed.
 (* precategories and categories form a category *)
 Definition precat_cat : PreCat_IsCat precat.
 Proof.
-by split=> [C D F|C D F|C D C' D' F G H];
-   apply/functorP => a b f /=; rewrite funext_frefl.
+(** BUG: apply/ wrong handling of universes. *)
+split=> [C D F|C D F|C D C' D' F G H];
+   eapply functorP => a b f /=. Unshelve. cbn. 4-6:exact: frefl.
+   all:by rewrite /= funext_frefl.
 Qed.
 HB.instance Definition _ := precat_cat.
 Definition cat_cat : PreCat_IsCat cat.
 Proof.
-by split=> [C D F|C D F|C D C' D' F G H];
-   apply/functorP => a b f /=; rewrite funext_frefl.
+split=> [C D F|C D F|C D C' D' F G H];
+   eapply functorP => a b f /=.
+    Unshelve. cbn. 4-6:exact: frefl.
+   all:by rewrite /= funext_frefl.
 Qed.
 HB.instance Definition _ := cat_cat.
 
@@ -231,21 +230,20 @@ HB.mixin Record Quiver_IsPreConcrete T & Quiver T := {
   concrete : T -> U;
   concrete_fun : forall (a b : T), (a ~> b) -> concrete a -> concrete b;
 }.
-Unset Universe Checking.
+
 #[short(type="preconcrete_quiver")]
-HB.structure Definition PreConcreteQuiver : Set :=
+HB.structure Definition PreConcreteQuiver :=
   { C of Quiver_IsPreConcrete C & IsQuiver C }.
-Set Universe Checking.
+
 Coercion concrete : PreConcreteQuiver.sort >-> Sortclass.
 
 HB.mixin Record PreConcrete_IsConcrete T & PreConcreteQuiver T := {
   concrete_fun_inj : forall (a b : T), injective (concrete_fun a b)
 }.
-Unset Universe Checking.
+
 #[short(type="concrete_quiver")]
-HB.structure Definition ConcreteQuiver : Set :=
+HB.structure Definition ConcreteQuiver :=
   { C of PreConcreteQuiver C & PreConcrete_IsConcrete C }.
-Set Universe Checking.
 
 HB.instance Definition _ (C : ConcreteQuiver.type) :=
   IsPreFunctor.Build _ _ (concrete : C -> U) concrete_fun.
@@ -255,14 +253,14 @@ HB.mixin Record PreCat_IsConcrete T & ConcreteQuiver T & PreCat T := {
   concrete_comp : forall (a b c : T) (f : a ~> b) (g : b ~> c),
     concrete <$> (f \; g) = ((concrete <$> g) \o (concrete <$> f))%function;
 }.
-Unset Universe Checking.
+
 #[short(type="concrete_precat")]
-HB.structure Definition ConcretePreCat : Set :=
+HB.structure Definition ConcretePreCat :=
   { C of PreCat C & ConcreteQuiver C & PreCat_IsConcrete C }.
 #[short(type="concrete_cat")]
-HB.structure Definition ConcreteCat : Set :=
+HB.structure Definition ConcreteCat :=
   { C of Cat C & ConcreteQuiver C & PreCat_IsConcrete C }.
-Set Universe Checking.
+
 
 HB.instance Definition _ (C : concrete_precat) :=
   PreFunctor_IsFunctor.Build C U concrete (@concrete1 _) (@concrete_comp _).
@@ -274,11 +272,10 @@ HB.instance Definition _ := PreConcrete_IsConcrete.Build U (fun _ _ _ _ => id).
 HB.instance Definition _ := PreCat_IsConcrete.Build U
    (fun=> erefl) (fun _ _ _ _ _ => erefl).
 
-Unset Universe Checking.
 HB.instance Definition _ := Quiver_IsPreConcrete.Build quiver (fun _ _ => id).
 HB.instance Definition _ := Quiver_IsPreConcrete.Build precat (fun _ _ => id).
 HB.instance Definition _ := Quiver_IsPreConcrete.Build cat (fun _ _ => id).
-Set Universe Checking.
+
 Lemma quiver_concrete_subproof : PreConcrete_IsConcrete quiver.
 Proof.
 constructor=> C D F G FG; apply: prefunctorP.
@@ -403,37 +400,76 @@ End cat_prod.
 
 HB.instance Definition _  (C : U) (D : quiver) :=
   IsQuiver.Build (C -> D) (fun f g => forall c, f c ~> g c).
+Set Printing Universes.
+Set Printing All.
+Print Quiver_type__canonical__cat_Quiver.
+Check Type : Quiver.type.
+  (* Change from @hom quiver C D to explicit form to avoid a reverse coercion. 
+    If we keep a reverse_coercion, its last argument Quiver.type@{? ?} can be universe minimized @{0 0} due to 
+    Cumulativity Transparent reverse_coercion. This is in conflict with later 
+    unifications, arbitrarily putting Quivers at 0 0.
 
-(* naturality *)
-HB.mixin Record IsNatural (C : quiver) (D : precat) (F G : C ~>_quiver D)
-     (n : forall c, F c ~> G c) := {
+    E.g. after elaboration we get: 
+    (@reverse_coercion@{max(u1+2,u2+2) 2} Quiver.type@{max(u1+1,u2+1) max(u1,u2)} Type@{1} Quiver_type__canonical__cat_Quiver@{u1 u2} Quiver.type@{0 0})
+
+    It should rather be:
+    (@reverse_coercion@{max(u1+2,u2+2) max(u1+2,u2+2)} Quiver.type@{max(u1+1,u2+1) max(u1,u2)} Type@{max(u1+1,u2+1)} Quiver_type__canonical__cat_Quiver@{u1 u2} Quiver.type@{u1 u2})
+    I.e., the reverse coercion does not constrain at all the universe relation between the  coerced objects.
+  *)
+HB.mixin Record IsNatural (C : quiver) (D : precat) (F G : @hom Quiver_type__canonical__cat_Quiver C D)
+     (n : forall c, F c ~> G c) : Prop := { 
    natural : forall (a b : C) (f : a ~> b),
      F <$> f \; n b = n a \; G <$> f
 }.
-Unset Universe Checking.
+Print IsNatural.phant_axioms.
+Print IsNatural.axioms_.
+Print reverse_coercion.
+(* Set Debug "unification". *)
+(* Set Debug "univMinim". *)
+(* Set Debug "UnivVariances". *)
+(* Set Debug "ustate". *)
+(* Definition Natural (C : quiver) (D : precat)
+   (F G : @hom quiver C D) :=
+  { n of @IsNatural C D F G n }. *)
+  
+#[log,verbose]
 HB.structure Definition Natural (C : quiver) (D : precat)
-   (F G : C ~>_quiver D) : Set :=
+   (F G : C ~>_quiver D) :=
   { n of @IsNatural C D F G n }.
-Set Universe Checking.
-HB.instance Definition _  (C : quiver) (D : precat) :=
-  IsQuiver.Build (PreFunctor.type C D) (@Natural.type C D).
+
 HB.instance Definition _  (C D : precat) :=
   IsQuiver.Build (Functor.type C D) (@Natural.type C D).
+
 Arguments natural {C D F G} n [a b] f : rename.
 
 Check fun (C D : cat) (F G : C ~> D) => F ~>_(C ~>_cat D) G.
 
 Lemma naturalx (C : precat) (D : concrete_precat)
-  (F G : C ~>_quiver D) (n : F ~> G)  (a b : C) (f : a ~> b) g :
+  (F G : @hom quiver C D) (n : F ~> G) : n = n.  (a b : C) (f : a ~> b) g :
+    (concrete <$> n b) ((concrete <$> F <$> f) g) =
+    (concrete <$> G <$> f) ((concrete <$> n a) g).
+
+Lemma naturalx (C : precat) (D : concrete_precat)
+  (F G : @hom (Quiver_type__canonical__cat_Quiver) C D) (n : F ~> G) : n = n.  (a b : C) (f : a ~> b) g :
     (concrete <$> n b) ((concrete <$> F <$> f) g) =
     (concrete <$> G <$> f) ((concrete <$> n a) g).
 Proof.
+  Set Printing All.
 have /(congr1 (fun h  => (concrete <$> h) g)) := natural n f.
 by rewrite !Fcomp.
 Qed.
 Arguments naturalx {C D F G} n [a b] f.
+Set Printing All.
+Definition Uq : concrete_precat := U.
+Set Printing Universes.
+About precat.
+About cat_PreCat__to__cat_Quiver.
+Lemma naturalU (C : precat) (F G : C ~>_quiver Uq) 
+  (n : @hom
+(PreFunctor_type__canonical__cat_Quiver (cat_PreCat__to__cat_Quiver C)
+(cat_ConcretePreCat__to__cat_PreCat U)) F G)
 
-Lemma naturalU (C : precat) (F G : C ~>_quiver U) (n : F ~> G)
+(* (n : F ~> G) *)
    (a b : C) (f : a ~> b) g :  n b (F^$ f g) = G^$ f (n a g).
 Proof. exact: (naturalx n). Qed.
 
@@ -960,11 +996,9 @@ HB.mixin Record PreMonoidal_IsMonoidal C & PreMonoidal C := {
         prodA (w, x, y) <*> \idmap_z \; prodA (w, x * y, z) \; \idmap_w <*> prodA (x, y, z);
 }.
 
-Unset Universe Checking.
 #[short(type="monoidal")]
-HB.structure Definition Monoidal : Set :=
+HB.structure Definition Monoidal :=
   { C of PreMonoidal_IsMonoidal C & PreMonoidal C }.
-Set Universe Checking.
 
 HB.mixin Record IsRing A := {
   zero : A;
