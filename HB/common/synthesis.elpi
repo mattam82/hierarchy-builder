@@ -52,7 +52,7 @@ infer-holes-depending-on-pack T (app [G | Args]) S :-
   coq.env.global GR G,
   ((coq.gref->id GR GRS, rex.match "phant.*" GRS /*TODO: phant-clone? GR N*/);
     pack? GR _),
-  G = pglobal _ Ui,
+  G = global _ Ui,
   (@uinstance! Ui => coq.env.typeof GR Ty), class-of-phant Ty KC SC C,
   factory->nparams C N,
   std.take N Args Params, !,
@@ -71,7 +71,7 @@ infer-holes-depending-on-pack _ X X.
 func infer-all-args-let list term, term, gref -> term, diagnostic.
 infer-all-args-let Ps T GR X Diag :- std.do! [
   coq.env.global GR GRI,
-  GRI = pglobal _ Ui,
+  GRI = global _ Ui,
   (@uinstance! Ui => coq.env.typeof GR Ty),
   coq.mk-eta (-1) Ty GRI EtaF,
   coq.subst-fun {std.append Ps [T]} EtaF FT,

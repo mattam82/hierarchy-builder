@@ -274,7 +274,7 @@ declare-asset Arg AssetKind :- std.do! [
 
 func term-refresh-univs term -> term.
 term-refresh-univs T1 T2 :-
-  (pi GR X T\ copy (pglobal GR X) T :- !, coq.env.global GR T) => copy T1 T2.
+  (pi GR X T\ copy (global GR X) T :- !, coq.env.global GR T) => copy T1 T2.
 
 func list-w-params.map-params list-w-params A, (func term -> term) -> list-w-params A.
 list-w-params.map-params (w-params.cons N T L) F (w-params.cons N T' L1) :- !,

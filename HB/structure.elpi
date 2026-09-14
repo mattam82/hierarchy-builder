@@ -212,7 +212,7 @@ clean-op-ty [exported-op _ Po C|Ops] S T1 T2 :-
 
   % TODO: refactor
   (pi Tm UI L L1 L2 Params Rest PoArgs\
-    (copy (app [pglobal (const Po) UI | L]) (app [Tm | L2]) :-
+    (copy (app [global (const Po) UI | L]) (app [Tm | L2]) :-
       !, std.split-at NParams L Params [_|Rest],
       coq.env.global (const C) Tm,
       std.drop NMixins Rest PoArgs,
