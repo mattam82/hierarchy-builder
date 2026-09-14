@@ -302,11 +302,11 @@ build-list-w-params [] TheType Factories (w-params.nil Name TT1 R) :- std.do! [
 func copy-pack-holes term, term, term -> term.
 copy-pack-holes TheType NewType Term Out :- std.do! [
   (pi Args NewArgs CSInstance ParamsRev ParamsRevCopy Pack UI HUI \
-    (copy (app[pglobal Pack UI | Args]) (app[pglobal Pack UI | NewArgs]) :- pack? Pack _,
+    (copy (app[global Pack UI | Args]) (app[global Pack UI | NewArgs]) :- pack? Pack _,
       std.rev Args [CSInstance,TheType|ParamsRev], !,
       std.map ParamsRev copy ParamsRevCopy,
       coq.univ-instance HUI [],
-      std.rev [pglobal {{:gref lib:elpi.hole}} HUI,NewType|ParamsRevCopy] NewArgs)) =>
+      std.rev [global {{:gref lib:elpi.hole}} HUI,NewType|ParamsRevCopy] NewArgs)) =>
   copy Term Out,
 ].
 

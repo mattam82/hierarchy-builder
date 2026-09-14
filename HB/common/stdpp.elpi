@@ -309,7 +309,7 @@ func coq.safe-dest-global-app term -> gref, list term.
 coq.safe-dest-global-app Tm GR Args :- !, std.do![
     coq.safe-dest-app Tm Head Args,
     std.assert! (not(var Head)) "coq.safe-dest-global-app: flexible input term",
-    Head = pglobal GR _
+    Head = global GR _
   ].
 
 % ---------------------------------------------------------------------
