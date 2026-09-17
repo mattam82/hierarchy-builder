@@ -5,7 +5,7 @@ log.coq.env.add-section-variable-noimplicits Name Ty C :-
   @local! => coq.env.add-section-variable ID Ty C,
 % elpi:endif
 % elpi:if version coq-elpi >= 2.4.0
-  @local! => coq.env.add-section-variable ID _ Ty C,
+  (@local! => coq.env.add-section-variable ID _ Ty C),
 % elpi:endif
   log.private.log-vernac (log.private.coq.vernac.variable ID Ty),
   @local! => log.coq.arguments.set-implicit (const C) [[]].

@@ -11,7 +11,7 @@ declare-existing T0 F0 :- std.do! [
   argument->term F0 F,
   std.assert-ok! (coq.typecheck F FTy)
     "HB: declare-existing illtyped factory instance",
-  std.assert! (coq.safe-dest-app FTy (global FactoryAlias) _)
+  std.assert! (coq.safe-dest-global-app FTy FactoryAlias _)
      "The type of the instance is not a factory",
   std.assert-ok! (factory-alias->gref FactoryAlias Factory) "HB: ",
   private.declare-instance Factory T F Clauses _ _,
@@ -26,7 +26,7 @@ func declare-const id, term, arity -> list (pair id constant), list (pair id con
 declare-const Name BodySkel TyWPSkel CFL CSL :- std.do! [
   std.assert-ok! (coq.elaborate-arity-skeleton TyWPSkel _ TyWP) "Definition type illtyped",
   coq.arity->term TyWP Ty,
-  std.assert-ok! (coq.elaborate-skeleton BodySkel Ty Body) "Definition illtyped",
+  std.assert-ok! (coq.elaborate-skeleton BodySkel Ty Body) "Definition illtyped WHYYYY?",
 
   % handle parameters via a section -- begin
   if (TyWP = arity SectionTy) (
@@ -42,7 +42,7 @@ declare-const Name BodySkel TyWPSkel CFL CSL :- std.do! [
   ),
 
   % identify the factory
-  std.assert! (coq.safe-dest-app SectionTy (global FactoryAlias) Args) "The type of the instance is not a factory",
+  std.assert! (coq.safe-dest-global-app SectionTy FactoryAlias Args) "The type of the instance is not a factory",
   std.assert-ok! (factory-alias->gref FactoryAlias Factory) "HB",
   std.assert! (factory->nparams Factory NParams) "Not a factory synthesized by HB",
 
@@ -65,9 +65,10 @@ declare-const Name BodySkel TyWPSkel CFL CSL :- std.do! [
     (coq.error "HB: The instance subject must be explicitly given.\nUse:\n  HB.instance Definition _ : M <subject> := ...\n  HB.instance Definition _ := M.Build <subject> ...")
     true,
 
+  std.assert-ok! (coq.typecheck OptimizedBody SectionTyUnfolded) "typechecking Optimized Body",
   log.coq.env.add-const-noimplicits-failondup RealName OptimizedBody
     SectionTyUnfolded @transparent! C,
-  TheFactory = (global (const C)),
+  coq.env.global (const C) TheFactory,
 
   private.check-non-forgetful-inheritance TheType Factory,
 
@@ -163,11 +164,12 @@ infer-class T  Class Struct MLwP S Name STy Clauses:- std.do![
   get-constructor Struct KS,
   coq.safe-dest-app T THD _,
   private.optimize-class-body THD {std.length Params} KCApp KCAppNames Clauses,
-  coq.mk-app (global KS) {std.append Params [T, KCAppNames]} S,
+  coq.mk-app {coq.env.global KS} {std.append Params [T, KCAppNames]} S,
   if-verbose (coq.say {header} "structure instance for" Name "is" {coq.term->string S}),
 
   coq.typecheck S STy ok, % failure may be due to a parameter not rich enough see #435
-     
+  
+  if-verbose (coq.say {header} "and it typechecks"),
 ].
 
 func decl-const-in-struct string, term, term, constant ->.
@@ -217,7 +219,7 @@ mk-factory-sort-deps AliasGR CSL :- std.do! [
   context.declare MLwPRaw MLwP SortParams SortKey SortMSL _,
   SortMSL => synthesis.infer-all-gref->deps SortParams SortKey GR FSort,
   log.coq.env.add-section-variable-noimplicits "f" FSort CF,
-  GCF = global (const CF),
+  coq.env.global (const CF) GCF,
   factory-sort (coercion GRFSort _ GR _),
   SortMSL => synthesis.infer-all-gref->deps SortParams SortKey GRFSort KSort,
   coq.mk-app KSort [GCF] KFSortEta,
@@ -225,7 +227,7 @@ mk-factory-sort-deps AliasGR CSL :- std.do! [
   std.length ML NMLArgs,
   coq.mk-n-holes NMLArgs SortMLHoles,
   std.append {std.append SortParams [SortKey|SortMLHoles]} [GCF] KFSortArgs,
-  coq.mk-app (global GRFSort) KFSortArgs KFSort,
+  coq.mk-app {coq.env.global GRFSort} KFSortArgs KFSort,
   std.assert-ok! (coq.unify-eq KFSortEta KFSort) "HB: KRSort not an app",
   std.map SortMSL
     (c\ o\ sigma m t\ c = mixin-src _ m t, o = mixin-src KFSort m t)
@@ -244,8 +246,8 @@ mk-factory-sort-factory AliasGR CFL CSL :- std.do! [
   log.coq.env.add-section-variable-noimplicits "f" FSort CF,
   std.length {list-w-params_list MLwP} NMLArgs,
   coq.mk-n-holes NMLArgs SortMLHoles,
-  GCF = global (const CF),
-  coq.mk-app (global GR) {std.append SortParams [GCF|SortMLHoles]} FGCF,
+  coq.env.global (const CF) GCF,
+  coq.mk-app {coq.env.global GR} {std.append SortParams [GCF|SortMLHoles]} FGCF,
   declare-const "_" GCF (arity FGCF) CFL CSL
 ].
 
@@ -262,8 +264,11 @@ saturate-instances Filter :- std.do! [
   findall-classes AllClasses,
 
   std.map ClausesHas has-mixin-instance->mixin-src Clauses,
+
+  % Abstract the universes for more general clauses
+  std.map Clauses coq.elpi.abstract-clause-univs ClausesF,
   
-  Clauses => std.map2 TL UKL (t\k\CI\sigma Classes\
+  ClausesF => std.map2 TL UKL (t\k\CI\sigma Classes\
     std.filter AllClasses (no-instance-for k) Classes,
     declare-all-on-type-constructor t Classes CI) CIL,
 
@@ -274,7 +279,8 @@ saturate-instances Filter :- std.do! [
 
 func no-instance-for cs-pattern, hbclass ->.
 no-instance-for K (class _ S _) :-
-  get-structure-sort-projection S (global Proj),
+  get-structure-sort-projection S G,
+  coq.env.global Proj G,
   coq.CS.db-for Proj K [].
 
 /* ------------------------------------------------------------------------- */
@@ -315,22 +321,25 @@ add-mixin T FGR MakeCanon MissingMixin [MixinSrcCl, BuilderDeclCl] CSL :- std.do
   new_int N, % timestamp
 
   synthesis.assert!-infer-mixin T MissingMixin Bo,
-  MixinSrcCl = mixin-src T MixinName (global (const C)),
-  BuilderDeclCl = builder-decl (builder N FGR MixinName (const C)),
 
   std.assert-ok! (coq.typecheck Bo Ty) "declare-instances: mixin illtyped",
-  safe-dest-app Ty (global MixinNameAlias) _,
+  coq.safe-dest-global-app Ty MixinNameAlias _,
   std.assert-ok! (factory-alias->gref MixinNameAlias MixinName) "HB",
 
   std.assert! (MissingMixin = MixinName) "HB: anomaly: we built the wrong mixin",
 
   % If the mixin instance is already a constant there is no need to
   % alias it.
-  if (Bo = global (const C)) true
+  if (coq.env.global (const C) Bo) true
     (Name is {gref->modname FGR 2 "_"} ^"__to__" ^ {gref->modname MixinName 2 "_"},
      if-verbose (coq.say {header} "declare mixin instance" Name),
      log.coq.env.add-const-noimplicits Name Bo Ty @transparent! C),
-  if (MakeCanon = tt, whd (global (const C)) [] (global (indc _)) _)
+
+  coq.env.global (const C) G,
+  MixinSrcCl = mixin-src T MixinName G,
+  BuilderDeclCl = builder-decl (builder N FGR MixinName (const C)),
+
+  if (MakeCanon = tt, whd G [] X _, coq.env.global (indc _) X)
      (std.do! [
          if-verbose (coq.say {header} "declare canonical mixin instance" C),
          with-locality (log.coq.CS.declare-instance C),
@@ -358,7 +367,7 @@ postulate-arity (parameter ID _ S A) Acc T T1 Ty :-
   if-verbose (coq.say {header} "postulating" ID),
   if (var S) (coq.fresh-type S) true,
   log.coq.env.add-section-variable-noimplicits ID S C,
-  Var = global (const C),
+  coq.env.global (const C) Var,
   postulate-arity (A Var) [Var|Acc] T T1 Ty.
 postulate-arity (arity Ty) ArgsRev X T Ty :-
   hd-beta X {std.rev ArgsRev} X1 Stack1,
@@ -414,22 +423,23 @@ hack-section-discharging B B.
 % unfolds the constant used for the phant abbreviation to avoid storing all
 % the phantom abstrctions and idfun that were used to trigger inference
 func optimize-body term -> term.
-optimize-body (app[global (const C)| Args]) Red :- (phant-abbrev _ (const C) _ ; (rex_match "phant_" {coq.gref->id (const C)})), !,
-  coq.env.const C (some B) _,
+optimize-body (app[global (const C) Uinst| Args]) Red :- (phant-abbrev _ (const C) _ ; (rex_match "phant_" {coq.gref->id (const C)})), !,
+  @uinstance! Uinst =!=> coq.env.const C (some B) _,
   hd-beta B Args HD Stack,
   unwind HD Stack Red.
 optimize-body (let _ _ T x\x) Red :- !, optimize-body T Red.
 optimize-body X X.
 
 func hnf term -> term.
-hnf X R :- get-option "hnf" tt, !, unwind {whd X []} R.
+hnf X R :- get-option "hnf" tt, !, whd X [] Y Z, unwind Y Z R.
 hnf X X.
 
 :index (_ _ 1)
 func optimize-class-body term, int, term -> term, list prop.
 optimize-class-body T NParams (let _ _ MBo R) R1 Clauses :- std.do! [
-  declare-mixin-name {hnf MBo} MC CL1,
-  if (T = global (indt _), MC = global (const C), not(coq.env.opaque? C))
+  hnf MBo MBoHNF,
+  declare-mixin-name MBoHNF MC CL1,
+  if (coq.env.global (indt _) T, coq.env.global (const C) MC, not(coq.env.opaque? C))
      (log.coq.strategy.set [C] (level 1000)) true, % opaque stops simpl
   optimize-class-body T NParams (R MC) R1 CL2,
   std.append CL1 CL2 Clauses,
@@ -437,20 +447,22 @@ optimize-class-body T NParams (let _ _ MBo R) R1 Clauses :- std.do! [
 optimize-class-body _ _ (app L) (app L) [].
 
 func declare-mixin-name term -> term, list prop.
-declare-mixin-name (global _ as T) T [] :- !.
-declare-mixin-name T (global GR) [] :- mixin-mem T GR, !.
-declare-mixin-name T T [] :- coq.safe-dest-app T (global GR) _, not (from _ _ GR), not (get-option "hnf" tt), !.
-declare-mixin-name T (global (const C)) [mixin-mem T (const C)] :- std.do! [
+declare-mixin-name T T [] :- coq.env.global _ T, !.
+declare-mixin-name T G [] :- mixin-mem T GR, coq.env.global GR G, !.
+declare-mixin-name T T [] :- coq.safe-dest-global-app T GR _, not (from _ _ GR), not (get-option "hnf" tt), !.
+declare-mixin-name T G [mixin-mem T (const C)] :- std.do! [
   Name is "HB_unnamed_mixin_" ^ {std.any->string {new_int}},
   if-verbose (coq.say {header} "Giving name" Name "to mixin instance" {coq.term->string T}),
-  log.coq.env.add-const-noimplicits Name T _ @transparent! C,
-].
+  std.assert-ok! (coq.typecheck T Ty) "Failing typechecking the mixin",
+  log.coq.env.add-const-noimplicits Name T Ty @transparent! C,
+  coq.env.global (const C) G
+], !.
 
 func check-non-forgetful-inheritance term, gref.
 check-non-forgetful-inheritance _ _ :-
   get-option "non_forgetful_inheritance" tt, !.
 check-non-forgetful-inheritance T Factory :- std.do! [
-  if (coq.safe-dest-app T (global (const HdSym)) _, structure-key HdSym _ Super) (
+  if (coq.safe-dest-global-app T (const HdSym) _, structure-key HdSym _ Super) (
     coq.warning "HB" "HB.non-forgetful-inheritance"
       "non forgetful inheritance detected.\n"
       "You have two solutions:"

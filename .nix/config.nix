@@ -1,7 +1,7 @@
 {
   format = "1.0.0";
   attribute = "hierarchy-builder";
-  default-bundle = "rocq-9.1";
+  default-bundle = "universes-and-variances";
   bundles = let
     mcHBcommon = {
       mathcomp.override.version = "master";
@@ -54,6 +54,24 @@
       bignums.override.version = "master";
       coquelicot.job = false;
     }; };
+
+    "universes-and-variances" = {
+      rocqPackages = mcHBcommon // {
+        rocq-core.override.version = "mattam82:universes-and-variances";
+        stdlib.override.version = "mattam82:universes-and-variances";
+        rocq-elpi.override.version = "mattam82:universes-and-variances";
+        rocq-elpi.override.elpi-version = "2.0.7";
+        bignums.override.version = "master";
+      };
+      coqPackages = coqMcHBcommon // {
+        coq.override.version = "mattam82:universes-and-variances";
+        stdlib.override.version = "mattam82:universes-and-variances";
+        coq-elpi.override.version = "mattam82:universes-and-variances";
+        coq-elpi.override.elpi-version = "2.0.7";
+        bignums.override.version = "master";
+        coquelicot.job = false;
+      };
+    };
 
     "rocq-9.2" = { rocqPackages = mcHBcommon // {
       rocq-core.override.version = "9.2";
