@@ -437,20 +437,18 @@ HB.structure Definition Natural (C : quiver) (D : precat)
    (F G : C ~>_quiver D) :=
   { n of @IsNatural C D F G n }.
 
+HB.instance Definition _  (C : quiver) (D : precat) :=
+  IsQuiver.Build (PreFunctor.type C D) (@Natural.type C D).
 HB.instance Definition _  (C D : precat) :=
   IsQuiver.Build (Functor.type C D) (@Natural.type C D).
 
 Arguments natural {C D F G} n [a b] f : rename.
 
 Check fun (C D : cat) (F G : C ~> D) => F ~>_(C ~>_cat D) G.
-
 Lemma naturalx (C : precat) (D : concrete_precat)
-  (F G : @hom quiver C D) (n : F ~> G) : n = n.  (a b : C) (f : a ~> b) g :
-    (concrete <$> n b) ((concrete <$> F <$> f) g) =
-    (concrete <$> G <$> f) ((concrete <$> n a) g).
-
-Lemma naturalx (C : precat) (D : concrete_precat)
-  (F G : @hom (Quiver_type__canonical__cat_Quiver) C D) (n : F ~> G) : n = n.  (a b : C) (f : a ~> b) g :
+   (F G : C ~>_quiver D)
+   (n : F ~> G)
+   (a b : C) (f : a ~> b) g :
     (concrete <$> n b) ((concrete <$> F <$> f) g) =
     (concrete <$> G <$> f) ((concrete <$> n a) g).
 Proof.
