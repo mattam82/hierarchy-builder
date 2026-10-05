@@ -184,8 +184,8 @@ phant-fun-struct T Name S Params PF Out :- std.do! [
   get-structure-sort-projection S SortProj,
   mk-app {coq.env.global S} Params SParams,
   mk-app SortProj Params SortProjParams,
-  % Msg = {{lib:hb.nomsg}},
-  Msg = some {{lp:SParams}},
+  Msg = none,
+  % Msg = some {{lp:SParams}},
   (@pi-decl Name SParams s\ fun-unify Msg T {mk-app SortProjParams [s]} (PF s) (UnifSI s)),
   fun-implicit Name SParams UnifSI Out
 ].
