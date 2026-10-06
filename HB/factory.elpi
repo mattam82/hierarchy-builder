@@ -236,7 +236,8 @@ mk-factory-abbrev Str GR Aliases FactAbbrev :-
   if (factory-alias->gref GR _ ok)
      (Aliases = [],
       FactAbbrev = by-classname GR)
-     (phant.of-gref ff GR [] PhTerm,
+     (coq.elpi.clear-univs ok,
+      phant.of-gref ff GR [] PhTerm,
       phant.add-abbreviation Str PhTerm PhC Abbrv,
       Aliases = [phant-abbrev GR (const PhC) Abbrv],
       FactAbbrev = by-phantabbrev Abbrv).
