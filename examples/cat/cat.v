@@ -400,37 +400,12 @@ End cat_prod.
 
 HB.instance Definition _  (C : U) (D : quiver) :=
   IsQuiver.Build (C -> D) (fun f g => forall c, f c ~> g c).
-Set Printing Universes.
-Set Printing All.
-Print Quiver_type__canonical__cat_Quiver.
-Check Type : Quiver.type.
-  (* Change from @hom quiver C D to explicit form to avoid a reverse coercion. 
-    If we keep a reverse_coercion, its last argument Quiver.type@{? ?} can be universe minimized @{0 0} due to 
-    Cumulativity Transparent reverse_coercion. This is in conflict with later 
-    unifications, arbitrarily putting Quivers at 0 0.
 
-    E.g. after elaboration we get: 
-    (@reverse_coercion@{max(u1+2,u2+2) 2} Quiver.type@{max(u1+1,u2+1) max(u1,u2)} Type@{1} Quiver_type__canonical__cat_Quiver@{u1 u2} Quiver.type@{0 0})
-
-    It should rather be:
-    (@reverse_coercion@{max(u1+2,u2+2) max(u1+2,u2+2)} Quiver.type@{max(u1+1,u2+1) max(u1,u2)} Type@{max(u1+1,u2+1)} Quiver_type__canonical__cat_Quiver@{u1 u2} Quiver.type@{u1 u2})
-    I.e., the reverse coercion does not constrain at all the universe relation between the  coerced objects.
-  *)
 HB.mixin Record IsNatural (C : quiver) (D : precat) (F G : @hom Quiver_type__canonical__cat_Quiver C D)
      (n : forall c, F c ~> G c) : Prop := { 
    natural : forall (a b : C) (f : a ~> b),
      F <$> f \; n b = n a \; G <$> f
 }.
-Print IsNatural.phant_axioms.
-Print IsNatural.axioms_.
-Print reverse_coercion.
-(* Set Debug "unification". *)
-(* Set Debug "univMinim". *)
-(* Set Debug "UnivVariances". *)
-(* Set Debug "ustate". *)
-(* Definition Natural (C : quiver) (D : precat)
-   (F G : @hom quiver C D) :=
-  { n of @IsNatural C D F G n }. *)
   
 #[log,verbose]
 HB.structure Definition Natural (C : quiver) (D : precat)
@@ -715,8 +690,8 @@ Lemma repr_hom_subdef (fc : F c) : IsNatural _ _ _ _ (repr_hom fc).
 Proof. by split=> a b f /=; apply/funext=> x; rewrite !Ucompx/= Fcomp. Qed.
 HB.instance Definition _ {fc : F c} := repr_hom_subdef fc.
 
-(*Definition repr_hom_nat : F c ~> homF c := repr_hom.
-
+Fail Definition repr_hom_nat : F c ~> homF c := repr_hom.
+(*
 Lemma hom_reprK : cancel hom_repr repr_hom_nat.
 Proof.
 move=> f; apply/natP; apply/funext => a; apply/funext => g /=.
@@ -846,7 +821,8 @@ Notation "C <~>_ T D" := (@epi T C D)
   (at level 99, T at level 0, only parsing) : cat_scope.
 Set Printing Notations. Unset Printing All.
 Definition comp1F {C D : cat} (F : C ~> D) : idmap \; F = F.
-Proof. eapply functorP => a b f. rewrite -> funext_frefl. simpl.
+Proof. (* FIXME, univ issue with apply/functorP and the rewrites *) 
+  eapply functorP => a b f. rewrite -> funext_frefl. simpl.
   rewrite -> compFmap. by cbn. Qed.
 
 Definition compF1 {C D : cat} (F : C ~> D) : F \; idmap = F.
@@ -857,7 +833,7 @@ Proof. by move<-; exact idmap. Defined.
 
 Definition feqsym {C : precat} {a b : C} : a = b -> b ~> a.
 Proof. by move<-; exact idmap. Defined.
-
+Set Debug "backtrace".
 HB.mixin Record IsLeftAdjointOf (C D : cat) (R : D ~> C) L
     & @Functor C D L := {
   Lphi : forall c d, (L c ~> d) -> (c ~> R d);
@@ -953,9 +929,9 @@ HB.structure Definition MonoidalPreFunctor C D :=
   { F of @PreFunctor_IsMonoidal C D F }.
 Arguments fun_prod {C D F x y} : rename.
 (* Arguments fun_prodF {C D F x x'} f {y y'} g : rename. *)
-Unset Universe Checking.
+
 HB.instance Definition _ := IsQuiver.Build premonoidal MonoidalPreFunctor.type.
-Set Universe Checking.
+
 
 HB.instance Definition _ (C : quiver) :=
   IsPreFunctor.Build (C * C)%type C fst
