@@ -1,4 +1,4 @@
-Toplevel input, character 0:
+Toplevel input, characters 0-55:
 > HB.structure Definition B2 :=  {M of isB2 M & isA2 M }.
 > ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Warning:

@@ -1,4 +1,4 @@
-Datatypes_prod__canonical__compress_coe_D@{u} =
+Datatypes_prod__canonical__compress_coe_D@{u u0} =
 fun D D' : D.type =>
 {|
   D.sort := D.sort D * D.sort D';

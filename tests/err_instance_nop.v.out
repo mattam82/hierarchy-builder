@@ -1,4 +1,4 @@
-Toplevel input, character 0:
+Toplevel input, characters 0-48:
 > HB.instance Definition _ : M nat := M.Build nat.
 > ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Warning: HB: no new instance is generated

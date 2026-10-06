@@ -868,6 +868,7 @@ actions N :-
 main [indt-decl D] :- record-decl->id D N, with-attributes (actions N).
 main [upoly-indt-decl D _] :- record-decl->id D N, with-attributes (actions N).
 main [const-decl N _ _] :- with-attributes (actions N).
+main [upoly-const-decl N _ _ _] :- with-attributes (actions N).
 
 main _ :-
   coq.error "Usage: HB.factory Record <FactoryName> T & F A & … := { … }.\nUsage: HB.factory Definition <FactoryName> T of F A := t.".
