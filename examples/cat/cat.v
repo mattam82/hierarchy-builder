@@ -612,7 +612,7 @@ HB.mixin Record IsMonad (C : precat) (M : C -> C) & @PreFunctor C C M := {
   unit : idfun ~~> M;
   join : (M \o M)%function ~~> M;
   bind : forall (a b : C), (a ~> M b) -> (M a ~> M b);
-  bindE : forall a b (f : a ~> M b), bind a b f = M <$> f \; join b;
+  bindE : forall a b (f : a ~> M b), bind a b f = M <$> f \; join _ ;
   unit_join : forall a, (M <$> unit a) \; join _ = idmap;
   join_unit : forall a, join _ \; (M <$> unit a) = idmap;
   join_square : forall a, M <$> join a \; join _ = join _ \; join _
@@ -667,7 +667,8 @@ HB.end.
 
 (* yoneda *)
 Section hom_repr.
-Context {C : cat} (F : C ~>_cat U).
+Universe obj mor.
+Context {C : cat@{obj mor}} (F : C ~>_cat U).
 
 Definition homF : C -> U := fun c => hom c ~~> F.
 
@@ -714,7 +715,7 @@ Lemma repr_hom_subdef (fc : F c) : IsNatural _ _ _ _ (repr_hom fc).
 Proof. by split=> a b f /=; apply/funext=> x; rewrite !Ucompx/= Fcomp. Qed.
 HB.instance Definition _ {fc : F c} := repr_hom_subdef fc.
 
-Definition repr_hom_nat : F c ~> homF c := repr_hom.
+(*Definition repr_hom_nat : F c ~> homF c := repr_hom.
 
 Lemma hom_reprK : cancel hom_repr repr_hom_nat.
 Proof.
@@ -722,11 +723,12 @@ move=> f; apply/natP; apply/funext => a; apply/funext => g /=.
 by rewrite -naturalU/=; congr (f _ _); apply: comp1o.
 Qed.
 Lemma repr_homK : cancel (repr_hom : F c ~> homF c) hom_repr.
-Proof. by move=> fc; rewrite /= F1. Qed.
+Proof. by move=> fc; rewrite /= F1. Qed.*)
 End pointed.
 Arguments hom_repr /.
 Arguments repr_hom /.
 
+(* 
 Lemma hom_repr_natural_subproof : IsNatural _ _ _ _ hom_repr.
 Proof.
 split=> a b f /=; apply/funext => n /=; rewrite !Ucompx/= compo1/=.
@@ -744,7 +746,7 @@ Qed.
 HB.instance Definition _ := hom_natural_repr_subproof.
 
 Definition hom_repr_nat : homF ~~> F := hom_repr.
-Definition repr_hom_nat_nat : F ~~> homF := repr_hom_nat.
+Definition repr_hom_nat_nat : F ~~> homF := repr_hom_nat. *)
 
 End hom_repr.
 
@@ -842,12 +844,13 @@ Notation "a <~> b" := (epi a b)
    (at level 99, b at level 200, format "a  <~>  b") : cat_scope.
 Notation "C <~>_ T D" := (@epi T C D)
   (at level 99, T at level 0, only parsing) : cat_scope.
-
+Set Printing Notations. Unset Printing All.
 Definition comp1F {C D : cat} (F : C ~> D) : idmap \; F = F.
-Proof. by apply/functorP=> a b f; rewrite funext_frefl/= compFmap. Qed.
+Proof. eapply functorP => a b f. rewrite -> funext_frefl. simpl.
+  rewrite -> compFmap. by cbn. Qed.
 
 Definition compF1 {C D : cat} (F : C ~> D) : F \; idmap = F.
-Proof. by apply/functorP=> a b f; rewrite funext_frefl/= compFmap. Qed.
+Proof. by eapply functorP=> a b f; rewrite -> funext_frefl; simpl; rewrite -> compFmap. Qed.
 
 Definition feq {C : precat} {a b : C} : a = b -> a ~> b.
 Proof. by move<-; exact idmap. Defined.
