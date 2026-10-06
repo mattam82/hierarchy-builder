@@ -427,14 +427,13 @@ Lemma naturalx (C : precat) (D : concrete_precat)
     (concrete <$> n b) ((concrete <$> F <$> f) g) =
     (concrete <$> G <$> f) ((concrete <$> n a) g).
 Proof.
-  Set Printing All.
 have /(congr1 (fun h  => (concrete <$> h) g)) := natural n f.
 by rewrite !Fcomp.
 Qed.
 Arguments naturalx {C D F G} n [a b] f.
-Set Printing All.
+
 Definition Uq : concrete_precat := U.
-Set Printing Universes.
+
 About precat.
 About cat_PreCat__to__cat_Quiver.
 Lemma naturalU (C : precat) (F G : C ~>_quiver Uq) 
@@ -642,10 +641,11 @@ HB.end.
 
 (* yoneda *)
 Section hom_repr.
-Universe obj mor.
-Context {C : cat@{obj mor}} (F : C ~>_cat U).
+Universe u.
+Context {C : cat@{u+1 u}} (F : C ~>_cat Type@{u}).
 
-Definition homF : C -> U := fun c => hom c ~~> F.
+(* Hom functor: Hom(c, _) -> F _ *)
+Definition homF : C -> Type@{u+1} := fun c => hom c ~~> F.
 
 Section nat.
 Context (x y : C) (xy : x ~> y).
@@ -657,7 +657,7 @@ Definition homFhom c : hom y c ~> F c := fun g => n _ (xy \; g).
 Lemma homFhom_natural_subdef : IsNatural C U (hom y) F homFhom.
 Proof.
 by split=> a b f /=; apply/funext => g /=;
-   rewrite /homFhom !Ucompx/= !naturalU/= Fcomp.
+   rw /homFhom !Ucompx/= !naturalU/= Fcomp.
 Qed.
 HB.instance Definition _ := homFhom_natural_subdef.
 End nat.
@@ -686,33 +686,35 @@ Arguments hom_repr /.
 Definition repr_hom (fc : F c) a : hom c a ~> F a :=
   fun f => F^$ f fc.
 Arguments repr_hom / : clear implicits.
+
 Lemma repr_hom_subdef (fc : F c) : IsNatural _ _ _ _ (repr_hom fc).
 Proof. by split=> a b f /=; apply/funext=> x; rewrite !Ucompx/= Fcomp. Qed.
 HB.instance Definition _ {fc : F c} := repr_hom_subdef fc.
 
-Fail Definition repr_hom_nat : F c ~> homF c := repr_hom.
-(*
+Definition repr_hom_nat : F c ~>_(Type@{u+1}) homF c := repr_hom.
+
 Lemma hom_reprK : cancel hom_repr repr_hom_nat.
 Proof.
 move=> f; apply/natP; apply/funext => a; apply/funext => g /=.
 by rewrite -naturalU/=; congr (f _ _); apply: comp1o.
 Qed.
-Lemma repr_homK : cancel (repr_hom : F c ~> homF c) hom_repr.
-Proof. by move=> fc; rewrite /= F1. Qed.*)
+
+Lemma repr_homK : cancel (repr_hom : F c ~>_(Type@{u+1}) homF c) hom_repr.
+Proof. by move=> fc; rewrite /= F1. Qed.
 End pointed.
 Arguments hom_repr /.
 Arguments repr_hom /.
-
-(* 
-Lemma hom_repr_natural_subproof : IsNatural _ _ _ _ hom_repr.
+About IsNatural.axioms_.
+ 
+(*Lemma hom_repr_natural_subproof : IsNatural C cat@{u+1 u} _ _ hom_repr.
 Proof.
 split=> a b f /=; apply/funext => n /=; rewrite !Ucompx/= compo1/=.
 by rewrite -naturalU/=; congr (n _ _); apply/esym/comp1o.
 Qed.
-HB.instance Definition _ := hom_repr_natural_subproof.
+HB.instance Definition _ := hom_repr_natural_subproof. *)
 
 (* show this from the previous proof *)
-Lemma hom_natural_repr_subproof : IsNatural _ _ _ _ repr_hom_nat.
+(*Lemma hom_natural_repr_subproof : IsNatural _ _ _ _ repr_hom_nat.
 Proof.
 split=> a b f /=; apply: funext => fa /=; rewrite !Ucompx/=.
 apply: natP; apply: funext => c /=; apply: funext => d /=.
@@ -819,7 +821,7 @@ Notation "a <~> b" := (epi a b)
    (at level 99, b at level 200, format "a  <~>  b") : cat_scope.
 Notation "C <~>_ T D" := (@epi T C D)
   (at level 99, T at level 0, only parsing) : cat_scope.
-Set Printing Notations. Unset Printing All.
+
 Definition comp1F {C D : cat} (F : C ~> D) : idmap \; F = F.
 Proof. (* FIXME, univ issue with apply/functorP and the rewrites *) 
   eapply functorP => a b f. rewrite -> funext_frefl. simpl.
@@ -833,7 +835,7 @@ Proof. by move<-; exact idmap. Defined.
 
 Definition feqsym {C : precat} {a b : C} : a = b -> b ~> a.
 Proof. by move<-; exact idmap. Defined.
-Set Debug "backtrace".
+
 HB.mixin Record IsLeftAdjointOf (C D : cat) (R : D ~> C) L
     & @Functor C D L := {
   Lphi : forall c d, (L c ~> d) -> (c ~> R d);
