@@ -23,5 +23,5 @@ inj x y : S (f x) (f y) -> R x y.
 
 Elpi Query HB.structure lp:{{
     saturate-type-constructor {{Inj}} X,
-    std.assert! (X = app [(global (const Inj_)), A_, B_, R_, S_, F_]) "wrong enriched type"
+    std.assert! (X = app [(global (const Inj_) _), A_, B_, R_, S_, F_]) "wrong enriched type"
 }}.

@@ -1,4 +1,4 @@
-Toplevel input, character 0:
+Toplevel input, characters 0-62:
 > HB.structure Definition AbelianGrp := { A of IsAbelianGrp A }.
 > ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Warning:
