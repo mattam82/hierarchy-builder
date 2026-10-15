@@ -217,6 +217,14 @@ clean-op-ty [exported-op _ Po C|Ops] S T1 T2 :-
       coq.env.global (const C) Tm,
       std.drop NMixins Rest PoArgs,
       std.append Params [S|PoArgs] L1,
+      std.map L1 copy L2)) =>
+  (pi Tm Proj NPars D L L1 L2 Params PoArgs\
+    (copy (app [primitive (proj Proj NPars), D | L]) (app [Tm | L2]) :-
+      coq.env.primitive-projection? Proj Po _,
+      !, 
+      coq.mk-n-holes NParams Params,
+      coq.env.global (const C) Tm,
+      std.append Params [S|L] L1,
       std.map L1 copy L2))
   =>
   clean-op-ty Ops S T1 T2.
@@ -255,7 +263,13 @@ export-1-operation M Struct Psort Pclass MwP (some Poperation) EXI EXO :- !, std
   if-verbose (coq.say {header} "export operation" Name "as" BodyTy),
   std.assert-ok! (coq.typecheck-ty BodyTy _) "Checking type of operation",
   std.assert-ok! (coq.typecheck Body BodyTy) "Checking body of operation",
-  log.coq.env.add-const-noimplicits Name Body BodyTy @transparent! C,
+
+  Psort = global (const SortC) _,
+
+  coq.redflags.add coq.redflags.betaiota [coq.redflags.const SortC] Flags,
+  @redflags! Flags => coq.reduction.cbv.norm BodyTy BodyTyRed,
+
+  log.coq.env.add-const-noimplicits Name Body BodyTyRed @transparent! C,
 
   w-params.nparams MwP NP,
   NImplicits is NP + 1,
@@ -409,12 +423,16 @@ declare-join (class C3 S3 MLwP3) (pr (class C1 S1 _) (class C2 S2 _)) (join C1 C
 
   factory->nparams C1 N1,
   factory->nparams C2 N2,
+  
+  S1_sort = (global (const S1_sort_cst) _),
 
   if-verbose (coq.say {header} "declare unification hint" Name),
   w-params.fold MLwP3 mk-fun (join-body N1 N2 S3
     {coq.env.global S2_Pack} S1_sort S3_to_S1 S2_class S3_to_S2) JoinBody,
-  std.assert-ok! (coq.typecheck JoinBody Ty) "declare-join: JoinBody illtyped",
-  log.coq.env.add-const-noimplicits Name JoinBody Ty @transparent! J,
+  coq.redflags.add coq.redflags.betaiota [coq.redflags.const S1_sort_cst] Flags,
+  @redflags! Flags => coq.reduction.cbv.norm JoinBody JoinBodyRed,
+  std.assert-ok! (coq.typecheck JoinBodyRed Ty) "declare-join: JoinBody illtyped",
+  log.coq.env.add-const-noimplicits Name JoinBodyRed Ty @transparent! J,
   log.coq.CS.declare-instance J.
 
 % TODO: this works under the invariant: we never have two classes that

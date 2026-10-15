@@ -479,7 +479,7 @@ Elpi Accumulate File "HB/factory.elpi".
 Elpi Accumulate lp:{{
 
 :name "start"
-main [A] :- with-attributes (with-logging (factory.declare-mixin A)).
+main [A] :- with-attributes (with-logging (@primitive! => factory.declare-mixin A)).
 
 }}.
 #[synterp] Elpi Accumulate File "HB/common/utils-synterp.elpi".
@@ -666,7 +666,7 @@ main [const-decl N (some B) Arity] :- !, std.do! [
   % compute the universe for the structure (default )
   prod-last {coq.arity->term Arity} Ty,
   if (ground_term Ty) (Sort = Ty) (Sort = {{Type}}), sort Univ = Sort,
-  with-attributes (with-logging (structure.declare N B Univ)),
+  with-attributes (with-logging (@primitive! => structure.declare N B Univ)),
 ].
 main [upoly-const-decl N (some B) Arity _] :- main [const-decl N (some B) Arity].
 
@@ -844,7 +844,7 @@ Elpi Accumulate File "HB/factory.elpi".
 Elpi Accumulate lp:{{
 
 :name "start"
-main [A] :- with-attributes (with-logging (factory.declare A)).
+main [A] :- with-attributes (with-logging (@primitive! => factory.declare A)).
 
 }}.
 #[synterp] Elpi Accumulate File "HB/common/utils-synterp.elpi".
