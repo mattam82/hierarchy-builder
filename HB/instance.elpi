@@ -148,7 +148,7 @@ has-instance T Struct :-
      fail. % we build it
 
 func infer-class term, classname, gref, factories -> term, string, term, list prop.
-infer-class T  Class Struct MLwP S Name STy Clauses:- std.spy-do![
+infer-class T  Class Struct MLwP S Name STy Clauses:- std.do![
 
   params->holes MLwP Params,
   get-constructor Class KC,
