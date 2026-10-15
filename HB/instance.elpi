@@ -251,7 +251,7 @@ mk-factory-sort-factory AliasGR CFL CSL :- std.do! [
 
 % create instances for all possible combinations of types and structure compatible 
 func saturate-instances cs-pattern -> .
-saturate-instances Filter :- std.do! [
+saturate-instances Filter :- std.spy-do! [
 
   findall-has-mixin-instance Filter ClausesHas,
 
