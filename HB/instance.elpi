@@ -148,15 +148,18 @@ has-instance T Struct :-
      fail. % we build it
 
 func infer-class term, classname, gref, factories -> term, string, term, list prop.
-infer-class T  Class Struct MLwP S Name STy Clauses:- std.do![
+infer-class T  Class Struct MLwP S Name STy Clauses:- std.spy-do![
 
   params->holes MLwP Params,
   get-constructor Class KC,
-
-  if (synthesis.infer-all-args-let Params T KC KCApp ok)
+  synthesis.infer-all-args-let Params T KC KCApp Diag,
+  if (Diag = ok)
      (if-verbose (coq.say {header} "we can build a" {nice-gref->string Struct} "on"
         {coq.term->string T}))
-     fail,
+     (Diag = error Msg,
+      coq.say {header} "cannot build a" {nice-gref->string Struct} "on"
+        {coq.term->string T} " error: " Msg, 
+     fail),
 
   Name is {cs-pattern->name {term->cs-pattern T}}
     ^ "__canonical__" ^ {gref->modname Struct 2 "_" },
@@ -255,7 +258,7 @@ mk-factory-sort-factory AliasGR CFL CSL :- std.do! [
 
 % create instances for all possible combinations of types and structure compatible 
 func saturate-instances cs-pattern -> .
-saturate-instances Filter :- std.do! [
+saturate-instances Filter :- std.spy-do! [
 
   findall-has-mixin-instance Filter ClausesHas,
 

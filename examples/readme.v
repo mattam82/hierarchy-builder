@@ -36,7 +36,10 @@ HB.structure Definition AbelianGrp := { A of AbelianGrp_of_AddComoid A & }.
 About AbelianGrp_of_AddComoid.phant_Build.
 
 Notation "- x" := (opp x).
-
+About AddComoid.type.
+Set Debug "unification".
+Set Debug "unification-cs".
+Print Canonical Projections.
 Lemma example (G : AbelianGrp.type) (x : G) : x + (- x) = - 0.
 Proof. by rewrite addrC addNr -[LHS](addNr zero) addrC add0r. Qed.
 
