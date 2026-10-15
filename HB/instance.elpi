@@ -156,10 +156,7 @@ infer-class T  Class Struct MLwP S Name STy Clauses:- std.do![
   if (Diag = ok)
      (if-verbose (coq.say {header} "we can build a" {nice-gref->string Struct} "on"
         {coq.term->string T}))
-     (Diag = error Msg,
-      coq.say {header} "cannot build a" {nice-gref->string Struct} "on"
-        {coq.term->string T} " error: " Msg, 
-     fail),
+     fail,
 
   Name is {cs-pattern->name {term->cs-pattern T}}
     ^ "__canonical__" ^ {gref->modname Struct 2 "_" },
