@@ -266,8 +266,10 @@ export-1-operation M Struct Psort Pclass MwP (some Poperation) EXI EXO :- !, std
 
   Psort = global (const SortC) _,
 
-  coq.redflags.add coq.redflags.betaiota [coq.redflags.const SortC] Flags,
-  @redflags! Flags => coq.reduction.cbv.norm BodyTy BodyTyRed,
+  if (coq.env.primitive? SortC)
+    (coq.redflags.add coq.redflags.betaiota [coq.redflags.const SortC] Flags,
+     @redflags! Flags => coq.reduction.cbv.norm BodyTy BodyTyRed)
+    (BodyTyRed = BodyTy),
 
   log.coq.env.add-const-noimplicits Name Body BodyTyRed @transparent! C,
 
@@ -429,8 +431,11 @@ declare-join (class C3 S3 MLwP3) (pr (class C1 S1 _) (class C2 S2 _)) (join C1 C
   if-verbose (coq.say {header} "declare unification hint" Name),
   w-params.fold MLwP3 mk-fun (join-body N1 N2 S3
     {coq.env.global S2_Pack} S1_sort S3_to_S1 S2_class S3_to_S2) JoinBody,
-  coq.redflags.add coq.redflags.betaiota [coq.redflags.const S1_sort_cst] Flags,
-  @redflags! Flags => coq.reduction.cbv.norm JoinBody JoinBodyRed,
+  if (coq.env.primitive? S1_sort_cst)
+    (coq.redflags.add coq.redflags.betaiota [coq.redflags.const S1_sort_cst] Flags,
+     @redflags! Flags => coq.reduction.cbv.norm JoinBody JoinBodyRed)
+    (JoinBodyRed = JoinBody),
+
   std.assert-ok! (coq.typecheck JoinBodyRed Ty) "declare-join: JoinBody illtyped",
   log.coq.env.add-const-noimplicits Name JoinBodyRed Ty @transparent! J,
   log.coq.CS.declare-instance J.
