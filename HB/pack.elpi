@@ -4,6 +4,14 @@
 
 namespace pack {
 
+func get-const-key term, list term -> constant, univ-instance, list term.
+get-const-key (primitive (proj P _)) [Rec|Extra] Cst Ui Params :- 
+  coq.env.primitive-projection? P Cst _,
+  std.assert-ok! (coq.typecheck Rec RecTy) "HB.pack: ill-typed projection record",
+  coq.safe-dest-app RecTy (global (indt _) Ui) IParams,
+  std.append {std.append IParams [Rec]} Extra Params.
+get-const-key (global (const C) Ui) Params C Ui Params.
+
 pred main i:term, i:list argument, o:term.
 main Ty Args Instance :- std.do! [
   std.assert! (not(var Ty)) "HB.pack: the structure to pack cannot be unknown, use HB.pack_for",
@@ -23,8 +31,14 @@ main Ty Args Instance :- std.do! [
 
   if (var T) (coq.error "HB.pack: you must pass a type or at least one factory") true,
 
-    if2 (T = app[SortProjHead|ProjParams], coq.env.global (const SortProj) SortProjHead, structure-key SortProj ClassProj _)
-        (AllFactories = [app[ClassProjHead|ProjParams] | Factories], coq.env.global (const ClassProj) ClassProjHead, Tkey = T) % already existing class on T
+    if2 (T = app[SortProjHead|ProjParams], 
+        get-const-key SortProjHead ProjParams SortProjC Ui ProjParams2,
+        structure-key SortProjC ClassProj _)
+        (NewFactories = [app[global (const ClassProj) Ui | ProjParams2] | Factories], 
+         if (coq.env.primitive-projection? ClassProjP ClassProj Narg)
+          (AllFactories = [app[primitive (proj ClassProjP Narg)|ProjParams] | NewFactories])
+          (AllFactories = NewFactories),
+        Tkey = T) % already existing class on T
       (def T _ _ Tkey) % we unfold letins if we can, they may hide constants with CS instances
         (AllFactories = Factories)
       (AllFactories = Factories, Tkey = T), % it's a factory, won't add anything

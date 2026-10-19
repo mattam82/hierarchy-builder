@@ -203,6 +203,9 @@ mixin-for T M MICompressed :- mixin-src T M Tm, !,
 
   %if-verbose (coq.say {header} "Trying to compress mixin for" {coq.term->string MI}),
   compress-coercion-paths MI MICompressed.
+mixin-for (app [global (const C) _Ui, X]) M MICompressed :- 
+  coq.env.primitive-projection? P C _, 
+  mixin-for (app [primitive (proj P _NArg), X]) M MICompressed.
 
 func drop int, list A -> list A.
 drop 0 L L :- !.
