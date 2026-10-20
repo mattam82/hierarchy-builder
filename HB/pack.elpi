@@ -64,9 +64,13 @@ synth-instance.aux Params KC KS T Tkey [] MLCano Instance :-
       Instance = app[Head | InstanceArgs], coq.env.global KS Head
 ].
 
+func is-global-app term.
+is-global-app T :- coq.safe-dest-global-app T _ _, !.
+is-global-app T :- coq.safe-dest-app T Head _, Head = primitive (proj _ _).
+
 pred synth-instance i:list term, i:gref, i:gref, i:term, i:term, i:list term, o:term.
 synth-instance Params KC KS T Tkey Factories Instance :-
-	if (coq.safe-dest-global-app Tkey _ _) (synthesis.local-canonical-mixins-of Tkey MLCano) (MLCano = []),
+	if (is-global-app Tkey) (synthesis.local-canonical-mixins-of Tkey MLCano) (MLCano = []),
 	synth-instance.aux Params KC KS T Tkey Factories MLCano Instance.
 
 pred elab-factories i:list argument, i:term, o:list term.
