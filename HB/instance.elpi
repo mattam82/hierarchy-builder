@@ -448,11 +448,24 @@ optimize-class-body T NParams (let _ _ MBo R) R1 Clauses :- std.do! [
 ].
 optimize-class-body _ _ (app L) (app L) [].
 
+% [mixin-mem-key T K] erases the universe instances and the universes of the
+% sorts of the mixin term T, so that mixins which only differ by fresh universe
+% instances share the same key in mixin-mem
+func mixin-mem-key term -> term.
+mixin-mem-key T K :- std.do! [
+  coq.univ-instance UI0 [],
+  (pi GR UI\ copy (global GR UI) (global GR UI0) :- !) =>
+  (pi U\ copy (sort (typ U)) (global {{:gref lib:elpi.hole}} UI0) :- !) =>
+    copy T K,
+].
+
 func declare-mixin-name term -> term, list prop.
 declare-mixin-name T T [] :- coq.env.global _ T, !.
-declare-mixin-name T G [] :- mixin-mem T GR, coq.env.global GR G, !.
+% A mixin with the same key is reused when its universes unify with the ones of T
+declare-mixin-name T G [] :- mixin-mem {mixin-mem-key T} GR, coq.env.global GR G, coq.unify-eq G T ok, !.
 declare-mixin-name T T [] :- coq.safe-dest-global-app T GR _, not (from _ _ GR), not (get-option "hnf" tt), !.
-declare-mixin-name T G [mixin-mem T (const C)] :- std.do! [
+declare-mixin-name T G [mixin-mem K (const C)] :- std.do! [
+  mixin-mem-key T K,
   Name is "HB_unnamed_mixin_" ^ {std.any->string {new_int}},
   if-verbose (coq.say {header} "Giving name" Name "to mixin instance" {coq.term->string T}),
   std.assert-ok! (coq.typecheck T Ty) "Failing typechecking the mixin",
