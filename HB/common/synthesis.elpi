@@ -30,7 +30,7 @@ infer-all-gref->deps Ps T GR X :- std.do! [
   std.assert! (gref->deps GR MLwP) "BUG: gref->deps should never fail",
   list-w-params_list MLwP ML,
   coq.env.typeof GR Ty,
-  coq.mk-eta (-1) Ty {coq.env.global GR} EtaF,
+  coq.mk-eta (-1) Ty {coq.env.fresh-global GR} EtaF,
   coq.subst-fun {std.append Ps [T]} EtaF FT,
   private.instantiate-all-these-mixin-args FT T ML Xraw,
   infer-holes-depending-on-params T Xraw X,
@@ -59,7 +59,7 @@ infer-holes-depending-on-pack T (app [G | Args]) S :-
   std.do! [
     infer-all-args-let Params T KC ClassInstance ok,
     std.rev [ClassInstance,T|{std.rev Params}] NewArgs,
-    S = app[{coq.env.global SC}| NewArgs ]
+    S = app[{coq.env.fresh-global SC}| NewArgs ]
   ].
 infer-holes-depending-on-pack _ X X.
 
@@ -70,7 +70,7 @@ infer-holes-depending-on-pack _ X X.
 % if Diagnostic is ok, else X is unassigned
 func infer-all-args-let list term, term, gref -> term, diagnostic.
 infer-all-args-let Ps T GR X Diag :- std.do! [
-  coq.env.global GR GRI,
+  coq.env.fresh-global GR GRI,
   GRI = global _ Ui,
   (@uinstance! Ui => coq.env.typeof GR Ty),
   coq.mk-eta (-1) Ty GRI EtaF,
@@ -212,17 +212,15 @@ drop 0 L L :- !.
 drop N [_|XS] L :- !, N1 is N - 1, drop N1 XS L.
 
 func compress-copy -> term, term.
-compress-copy (app [G | L]) R :-
+compress-copy (app [global (const C) _ | L]) R :-
   sub-class C2 C3 C NparamsC,
-  coq.env.global (const C) G,
-  drop NparamsC L [app [G' | L']],
+  drop NparamsC L [app [global (const C') _ | L']],
   sub-class C1 C2 C' NparamsC',
-  coq.env.global (const C') G',
   drop NparamsC' L' L'',
   sub-class C1 C3 C'' NparamsC'',
   std.append {coq.mk-n-holes NparamsC''} L'' HL'',
   CHL'' = app [G'' | HL''],
-  coq.env.global (const C'') G'',
+  coq.env.fresh-global (const C'') G'',
   coq.typecheck CHL'' _ ok, !,
   compress-copy CHL'' R.
 compress-copy (app L) (app L1) :- !, std.map L compress-copy L1.
@@ -244,7 +242,7 @@ mixin-for_mixin-builder (mixin-for _ _ B) B.
 func builder->term list term, term, factoryname, mixinname -> term.
 builder->term Ps T Src Tgt B :- !, std.do! [
   from Src Tgt FGR,
-  coq.env.global FGR F,
+  coq.env.fresh-global FGR F,
   gref->deps Src MLwP,
   list-w-params_list MLwP ML,
   infer-all-these-mixin-args Ps T ML F B,
@@ -291,18 +289,18 @@ structure-instance->mixin-srcs T S MSLC :- std.do! [
   structure-nparams S NParams,
   coq.mk-n-holes NParams Holes,
   std.append Holes [ST] HolesST,
-  coq.mk-app {coq.env.global (const SortProj)} HolesST SortHolesST,
+  coq.mk-app {coq.env.fresh-global (const SortProj)} HolesST SortHolesST,
   % find an instance in ST
   coq.unify-eq T SortHolesST ok,
   % we look for an instance which is concrete, we take the parts
   get-constructor S KS,
-  coq.mk-app {coq.env.global KS} {std.append Holes [T, CT]} KSHolesC,
+  coq.mk-app {coq.env.fresh-global KS} {std.append Holes [T, CT]} KSHolesC,
   coq.unify-eq ST KSHolesC ok,
   % if the class instance is concrete, we take the parts
   get-constructor (indt Class) KC,
   std.length {list-w-params_list CMLwP} CMixinsN,
   coq.mk-n-holes CMixinsN MIL,
-  coq.mk-app {coq.env.global KC} {std.append Holes [T | MIL]} CBody,
+  coq.mk-app {coq.env.fresh-global KC} {std.append Holes [T | MIL]} CBody,
   coq.unify-eq CT CBody ok,
   % we finally generare micin-src clauses for all mixins
   std.map MIL (structure-instance->mixin-srcs.aux T) MSLL,
@@ -314,7 +312,7 @@ structure-instance->mixin-srcs T S MSLC :- std.do! [
 structure-instance->mixin-srcs _ _ [].
 
 structure-instance->mixin-srcs.aux2 Params T Class (some P) M :-
-  coq.mk-app {coq.env.global (const P)} {std.append Params [T,Class]} M.
+  coq.mk-app {coq.env.fresh-global (const P)} {std.append Params [T,Class]} M.
 
 func structure-instance->mixin-srcs.aux term, term -> list prop.
 structure-instance->mixin-srcs.aux T  F CL :-
