@@ -43,7 +43,12 @@ main Ty Args Instance :- std.do! [
         (AllFactories = Factories)
       (AllFactories = Factories, Tkey = T), % it's a factory, won't add anything
 
-  private.synth-instance Params KC KS T Tkey AllFactories Instance,
+  private.synth-instance Params KC KS T Tkey AllFactories Instance0,
+
+  % The instance is synthesized on Tkey, the unfolding of T, to find the
+  % canonical instances it may hide: fold it back to T, so that the instance
+  % does not contain copies of the body of T
+  if (Tkey == T) (Instance = Instance0) ((copy Tkey T :- !) => copy Instance0 Instance),
 
 ].
 

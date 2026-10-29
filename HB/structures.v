@@ -560,7 +560,8 @@ Elpi Accumulate lp:{{
 :name "start"
 solve (goal _ _ S _ [trm Ty | Args] as G) GLS :- with-attributes (with-logging (std.do! [
   pack.main Ty Args InstanceSkel,
-  std.assert-ok! (coq.elaborate-skeleton InstanceSkel S Instance) "HB.pack_for: the instance does not solve the goal",
+  % The skeleton is made of terms elaborated in the current state: keep their universes
+  std.assert-ok! (d\ @keepunivs! => coq.elaborate-skeleton InstanceSkel S Instance d) "HB.pack_for: the instance does not solve the goal",
   log.refine.no_check Instance G GLS,
 ])).
 
@@ -583,7 +584,8 @@ Elpi Accumulate lp:{{
 :name "start"
 solve (goal _ _ Ty _ Args as G) GLS :- with-attributes (with-logging (std.do! [
   pack.main Ty Args InstanceSkel,
-  std.assert-ok! (coq.elaborate-skeleton InstanceSkel Ty Instance) "HB.pack: the instance does not solve the goal",
+  % The skeleton is made of terms elaborated in the current state: keep their universes
+  std.assert-ok! (d\ @keepunivs! => coq.elaborate-skeleton InstanceSkel Ty Instance d) "HB.pack: the instance does not solve the goal",
   log.refine.no_check Instance G GLS,
 ])).
 
