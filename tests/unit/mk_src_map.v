@@ -12,15 +12,18 @@ Check list_foo.
 Elpi Query HB.structure lp:{{
 
 has-mixin-instance->mixin-src (has-mixin-instance (cs-gref{{:gref list}}) {{:gref is_foo.axioms_}} {{:gref list_foo}}) MS,
-    MS = (pi a b \ 
-        mixin-src (app [{{list}}, b]) ({{:gref is_foo.axioms_}}) (app [{{list_foo}}, a]) 
-            :- [coq.unify-eq a b ok])
+    {{:gref list}} = indt List, {{:gref list_foo}} = const ListFoo,
+    % The universe instances of list and list_foo are fresh
+    MS = (pi a b aty diag \
+        mixin-src (app [global (indt List) _, b]) ({{:gref is_foo.axioms_}}) (app [global (const ListFoo) _, a])
+            :- [coq.typecheck a aty diag, coq.unify-eq a b ok])
 }}.
 
 Elpi Query HB.structure lp:{{
 
 has-mixin-instance->mixin-src (has-mixin-instance (cs-gref{{:gref list}}) {{:gref is_foo.axioms_}} {{:gref list_foo'}}) MS',
-MS' = (pi p a b \ 
-    mixin-src (app [{{list}}, b]) {{:gref is_foo.axioms_}} (app [{{list_foo'}}, p,a])
-        :- [coq.unify-eq  a b ok]).
+{{:gref list}} = indt List, {{:gref list_foo'}} = const ListFoo',
+MS' = (pi p a b aty diag \
+    mixin-src (app [global (indt List) _, b]) {{:gref is_foo.axioms_}} (app [global (const ListFoo') _, p,a])
+        :- [coq.typecheck a aty diag, coq.unify-eq a b ok]).
 }}.
