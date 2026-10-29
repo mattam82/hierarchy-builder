@@ -70,7 +70,7 @@ declare-const Name BodySkel TyWPSkel CFL CSL :- std.do! [
   std.assert-ok! (coq.typecheck OptimizedBody SectionTyUnfolded) "typechecking Optimized Body",
   log.coq.env.add-const-noimplicits-failondup RealName OptimizedBody
     SectionTyUnfolded @transparent! C,
-  coq.env.global (const C) TheFactory,
+  coq.env.fresh-global (const C) TheFactory,
 
   private.check-non-forgetful-inheritance TheType Factory,
 
@@ -166,7 +166,7 @@ infer-class T  Class Struct MLwP S Name STy Clauses:- std.do![
   get-constructor Struct KS,
   coq.safe-dest-app T THD _,
   private.optimize-class-body THD {std.length Params} KCApp KCAppNames Clauses,
-  coq.mk-app {coq.env.global KS} {std.append Params [T, KCAppNames]} S,
+  coq.mk-app {coq.env.fresh-global KS} {std.append Params [T, KCAppNames]} S,
   if-verbose (coq.say {header} "structure instance for" Name "is" {coq.term->string S}),
 
   coq.typecheck S STy ok, % failure may be due to a parameter not rich enough see #435
@@ -221,7 +221,7 @@ mk-factory-sort-deps AliasGR CSL :- std.do! [
   context.declare MLwPRaw MLwP SortParams SortKey SortMSL _,
   SortMSL => synthesis.infer-all-gref->deps SortParams SortKey GR FSort,
   log.coq.env.add-section-variable-noimplicits "f" FSort CF,
-  coq.env.global (const CF) GCF,
+  coq.env.fresh-global (const CF) GCF,
   factory-sort (coercion GRFSort _ GR _),
   SortMSL => synthesis.infer-all-gref->deps SortParams SortKey GRFSort KSort,
   coq.mk-app KSort [GCF] KFSortEta,
@@ -229,7 +229,7 @@ mk-factory-sort-deps AliasGR CSL :- std.do! [
   std.length ML NMLArgs,
   coq.mk-n-holes NMLArgs SortMLHoles,
   std.append {std.append SortParams [SortKey|SortMLHoles]} [GCF] KFSortArgs,
-  coq.mk-app {coq.env.global GRFSort} KFSortArgs KFSort,
+  coq.mk-app {coq.env.fresh-global GRFSort} KFSortArgs KFSort,
   std.assert-ok! (coq.unify-eq KFSortEta KFSort) "HB: KRSort not an app",
   std.map SortMSL
     (c\ o\ sigma m t\ c = mixin-src _ m t, o = mixin-src KFSort m t)
@@ -248,8 +248,8 @@ mk-factory-sort-factory AliasGR CFL CSL :- std.do! [
   log.coq.env.add-section-variable-noimplicits "f" FSort CF,
   std.length {list-w-params_list MLwP} NMLArgs,
   coq.mk-n-holes NMLArgs SortMLHoles,
-  coq.env.global (const CF) GCF,
-  coq.mk-app {coq.env.global GR} {std.append SortParams [GCF|SortMLHoles]} FGCF,
+  coq.env.fresh-global (const CF) GCF,
+  coq.mk-app {coq.env.fresh-global GR} {std.append SortParams [GCF|SortMLHoles]} FGCF,
   declare-const "_" GCF (arity FGCF) CFL CSL
 ].
 
@@ -337,11 +337,11 @@ add-mixin T FGR MakeCanon MissingMixin [MixinSrcCl, BuilderDeclCl] CSL :- std.do
      if-verbose (coq.say {header} "declare mixin instance" Name),
      log.coq.env.add-const-noimplicits Name Bo Ty @transparent! C),
 
-  coq.env.global (const C) G,
+  coq.env.fresh-global (const C) G,
   MixinSrcCl = mixin-src T MixinName G,
   BuilderDeclCl = builder-decl (builder N FGR MixinName (const C)),
 
-  if (MakeCanon = tt, whd {coq.env.global (const C)} [] X _, coq.env.global (indc _) X)
+  if (MakeCanon = tt, whd {coq.env.fresh-global (const C)} [] X _, coq.env.global (indc _) X)
      (std.do! [
          if-verbose (coq.say {header} "declare canonical mixin instance" C),
          with-locality (log.coq.CS.declare-instance C),
@@ -369,7 +369,7 @@ postulate-arity (parameter ID _ S A) Acc T T1 Ty :-
   if-verbose (coq.say {header} "postulating" ID),
   if (var S) (coq.fresh-type S) true,
   log.coq.env.add-section-variable-noimplicits ID S C,
-  coq.env.global (const C) Var,
+  coq.env.fresh-global (const C) Var,
   postulate-arity (A Var) [Var|Acc] T T1 Ty.
 postulate-arity (arity Ty) ArgsRev X T Ty :-
   hd-beta X {std.rev ArgsRev} X1 Stack1,
@@ -462,7 +462,7 @@ mixin-mem-key T K :- std.do! [
 func declare-mixin-name term -> term, list prop.
 declare-mixin-name T T [] :- coq.env.global _ T, !.
 % A mixin with the same key is reused when its universes unify with the ones of T
-declare-mixin-name T G [] :- mixin-mem {mixin-mem-key T} GR, coq.env.global GR G, coq.unify-eq G T ok, !.
+declare-mixin-name T G [] :- mixin-mem {mixin-mem-key T} GR, coq.env.fresh-global GR G, coq.unify-eq G T ok, !.
 declare-mixin-name T T [] :- coq.safe-dest-global-app T GR _, not (from _ _ GR), not (get-option "hnf" tt), !.
 declare-mixin-name T G [mixin-mem K (const C)] :- std.do! [
   mixin-mem-key T K,
@@ -470,7 +470,7 @@ declare-mixin-name T G [mixin-mem K (const C)] :- std.do! [
   if-verbose (coq.say {header} "Giving name" Name "to mixin instance" {coq.term->string T}),
   std.assert-ok! (coq.typecheck T Ty) "Failing typechecking the mixin",
   log.coq.env.add-const-noimplicits Name T Ty @transparent! C,
-  coq.env.global (const C) G
+  coq.env.fresh-global (const C) G
 ], !.
 
 % [sort-projection-head T C] holds when T is an application of the constant C,

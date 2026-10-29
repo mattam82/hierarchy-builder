@@ -141,7 +141,7 @@ func factory-alias->gref gref -> gref, diagnostic.
 factory-alias->gref PhGR GR ok :- phant-abbrev GR PhGR _, !.
 factory-alias->gref GR GR ok :- phant-abbrev GR _ _, !.
 factory-alias->gref GR _ (error Msg) :- !,
-  Msg is {coq.term->string {coq.env.global GR} } ^
+  Msg is {coq.term->string {coq.env.fresh-global GR} } ^
          " is not a factory or its library (" ^
         { std.string.concat "." {std.drop-last 1 {coq.gref->path GR} } } ^
         ") was not correctly imported".

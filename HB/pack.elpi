@@ -61,7 +61,7 @@ synth-instance.aux Params KC KS T Tkey [] MLCano Instance :-
 	MLCano => std.do! [
     std.assert-ok! (synthesis.infer-all-args-let Params Tkey KC ClassInstance) "HB.pack: cannot infer the instance",
     std.append Params [T, ClassInstance] InstanceArgs,
-      Instance = app[Head | InstanceArgs], coq.env.global KS Head
+      Instance = app[Head | InstanceArgs], coq.env.fresh-global KS Head
 ].
 
 func is-global-app term.
@@ -82,8 +82,8 @@ elab-factories [trm FactorySkel|More] T [Factory|Factories] :-
       (coq.safe-dest-app {unwind {whd FTy []}}  TyHead _, coq.env.global GR TyHead, structure-key SortP ClassP GR) % a structure instance
         (coq.mk-n-holes {structure-nparams GR} Params,
          std.append Params [MaybeFactory] ParamsF,
-         coq.mk-app {coq.env.global (const SortP)} ParamsF T1,
-         coq.mk-app {coq.env.global (const ClassP)} ParamsF Factory)
+         coq.mk-app {coq.env.fresh-global (const SortP)} ParamsF T1,
+         coq.mk-app {coq.env.fresh-global (const ClassP)} ParamsF Factory)
       (coq.error "HB: argument" {coq.term->string MaybeFactory} "is not a factory, it has type:" {coq.term->string FTy}),
   std.assert-ok! (coq.unify-eq T T1) "HB.pack: factory for the wrong type",
   elab-factories More T Factories.
