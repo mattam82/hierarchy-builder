@@ -23,6 +23,56 @@ with-locality P :-
   if (get-option "local" tt) (A = @local!) (A = @global!),
   A =!=> P.
 
+% [refresh-univs X Y] Y is X (which must be ground) where every universe level
+% that is not global and every non empty universe instance is replaced by a
+% fresh one. It re-obtains a value after coq.elpi.clear-univs has dropped the
+% local universes it mentions; constraints are not kept, so a term has to be
+% typechecked again to recover them.
+pred refresh-univs.store o:A.
+func refresh-univs A -> A.
+refresh-univs X Y :- std.do! [
+  std.assert! (ground_term X) "HB: refresh-univs: not ground",
+  coq.elpi.abstract-clause-univs (refresh-univs.store X) C,
+  std.once (C => refresh-univs.store Y),
+].
+
+% [stable-subject T] holds if T survives the reset of the universe state done
+% by coq.elpi.clear-univs or @dropunivs!: it has no hole, no binder (the
+% relevance mark of a binder can be a local variable), no universe instance
+% and no local universe. The check is on the universes T literally contains:
+% coq.univ.variable.of-term would see their global representatives instead.
+func stable-subject term ->.
+stable-subject T :-
+  ground_term T,
+  not (has-binder T),
+  coq.elpi.abstract-clause-univs (refresh-univs.store T) C,
+  std.once (C => refresh-univs.store T1),
+  T1 == T.
+
+pred has-binder i:term.
+has-binder (fun _ _ _).
+has-binder (prod _ _ _).
+has-binder (let _ _ _ _).
+has-binder (fix _ _ _ _).
+has-binder (match _ _ _).
+has-binder (app L) :- std.exists L has-binder.
+
+func refresh-univs-if bool, A -> A.
+refresh-univs-if tt X Y :- refresh-univs X Y.
+refresh-univs-if ff X X.
+
+% [with-dropunivs Drop P] runs P, which declares something, with @dropunivs!
+% if Drop is tt, so that the universe state is reset after the declaration
+func with-dropunivs bool, (func) ->.
+with-dropunivs tt P :- @dropunivs! => P.
+with-dropunivs ff P :- P.
+
+% [under-clauses CLL P] runs P under the clauses CLL, the clauses of
+% the last list taking precedence
+func under-clauses list (list prop), prop ->.
+under-clauses [] P :- std.once P.
+under-clauses [CL|CLL] P :- CL => under-clauses CLL P.
+
 func acc-clause scope, prop.
 acc-clause Scope C :- coq.elpi.accumulate Scope "hb.db" (clause _ _ C).
 
