@@ -7,16 +7,7 @@ namespace structure {
 %  cons p1\ cons p2\ nil t\ [triple f1 [p1] t,triple f2 [p1, {{p1 * p2}}] t]
 pred declare i:string, i:term, i:sort.
 declare Module BSkel Sort :- std.do! [
-  disable-id-phant BSkel BSkelNoId,
-  std.assert-ok! (coq.elaborate-skeleton BSkelNoId _ BNoId) "illtyped structure definition",
-  re-enable-id-phant BNoId B,
-  private.sigT->list-w-params B GRFSwP ClosureCheck,
-  
-  factories-provide GRFSwP PMLwP,
-
-  list-w-params.flatten-map GRFSwP gref->deps RMLwP, % TODO: extract code from factories-provide
-  list-w-params.append PMLwP RMLwP UnsortedMLwP,
-  w-params.map UnsortedMLwP (p\t\ toposort-mixins) MLwP,
+  private.elaborate-mixins BSkel ClosureCheck PMLwP MLwP,
 
   list-w-params_list PMLwP PML,
   list-w-params_list MLwP ML,
@@ -113,8 +104,16 @@ declare Module BSkel Sort :- std.do! [
   private.declare-sort-coercion CoeClass Structure SortProjection,
 
   if-verbose (coq.say {header} "exporting unification hints"),
+  % the coercions are declared with @dropunivs! when their inputs can be
+  % refreshed, the terms used afterwards are then re-obtained (see
+  % declare-unification-hints)
+  if (ground_term (triple SortProjection ClassProjection CurrentClass))
+     (Drop = tt) (Drop = ff),
   ClassAlias => Factories => GRDepsClauses =>
-    private.declare-unification-hints SortProjection ClassProjection CurrentClass NewJoins,
+    private.declare-unification-hints Drop (private.reobtain-class BSkel Structure)
+      SortProjection ClassProjection CurrentClass NewJoins
+      SortProjection1 ClassProjection1 MLwP1,
+  w-params.map MLwP1 (_\_\_\ mk-nil) NilwP1,
   % Register in Elpi's DB the new structure
   % NOT TODO: All these acc are correctly locaed in an Export Module
 
@@ -143,14 +142,14 @@ declare Module BSkel Sort :- std.do! [
 
   if-verbose (coq.say {header} "declaring on_ abbreviation"),
 
-  private.mk-infer-key CoeClass ClassProjection NilwP {coq.env.fresh-global Structure} PhClass,
+  private.mk-infer-key CoeClass ClassProjection1 NilwP1 {coq.env.fresh-global Structure} PhClass,
 
   phant.add-abbreviation "on_" PhClass _ ClassOfAbbrev,
   (pi c\ coq.notation.abbreviation ClassOfAbbrev [c] (ClassOfAbbrev_ c)),
 
   if-verbose (coq.say {header} "declaring `copy` abbreviation"),
 
-  coq.mk-app {coq.env.fresh-global ClassName} {params->holes NilwP} AppClassHoles,
+  coq.mk-app {coq.env.fresh-global ClassName} {params->holes NilwP1} AppClassHoles,
   @global! => log.coq.notation.add-abbreviation "copy" 2
     {{fun T C => (lp:(ClassOfAbbrev_ C) : (lp:AppClassHoles T)) }} tt _,
 
@@ -168,7 +167,7 @@ declare Module BSkel Sort :- std.do! [
 
   if-verbose (coq.say {header} "exporting operations"),
     ClassAlias => Factories => GRDepsClauses =>
-      private.export-operations Structure SortProjection ClassProjection MLwP [] EX MLToExport,
+      private.export-operations Structure SortProjection1 ClassProjection1 MLwP1 [] EX MLToExport,
     % TODO: issue an Arguments op T : rename, where T is the name written by
     %   the user in Definition foo := { T of ... }
 
@@ -186,7 +185,7 @@ declare Module BSkel Sort :- std.do! [
   export.clause (phant-abbrev ClassName ClassName ClassAbbrev),
 
   NewClauses => if-MC-compat (private.mc-compat-structure Module ModulePath MLToExport
-    {w-params.nparams MLwP} ClassProjection GRPack),
+    {w-params.nparams MLwP1} ClassProjection1 GRPack),
 
 % Automatic saturation disabled since it is expensive
 %  NewClauses => instance.saturate-instances,
@@ -199,6 +198,34 @@ declare Module BSkel Sort :- std.do! [
 namespace private {
 
 shorten coq.{ term->gref, subst-fun, safe-dest-app, mk-app, mk-eta, subst-prod }.
+
+% [elaborate-mixins BSkel ClosureCheck PMLwP MLwP] elaborates the structure
+% definition BSkel and computes the mixins it provides and the ones of its class
+pred elaborate-mixins i:term, o:bool, o:mixins, o:mixins.
+elaborate-mixins BSkel ClosureCheck PMLwP MLwP :- std.do! [
+  disable-id-phant BSkel BSkelNoId,
+  std.assert-ok! (coq.elaborate-skeleton BSkelNoId _ BNoId) "illtyped structure definition",
+  re-enable-id-phant BNoId B,
+  sigT->list-w-params B GRFSwP ClosureCheck,
+
+  factories-provide GRFSwP PMLwP,
+
+  list-w-params.flatten-map GRFSwP gref->deps RMLwP, % TODO: extract code from factories-provide
+  list-w-params.append PMLwP RMLwP UnsortedMLwP,
+  w-params.map UnsortedMLwP (p\t\ toposort-mixins) MLwP,
+].
+
+% [reobtain-class BSkel Structure SortProjection ClassProjection MLwP]
+% re-obtains, after a reset of the universe state, the terms computed by
+% HB.structure: MLwP is elaborated again from BSkel, the projections get fresh
+% universe instances (in this order, the one of their first computation)
+pred reobtain-class i:term, i:structure, o:term, o:term, o:mixins.
+reobtain-class BSkel (indt StructureInd) SortProjection ClassProjection MLwP :- std.do! [
+  elaborate-mixins BSkel _ _ MLwP,
+  coq.env.projections StructureInd [some SortP, some ClassP],
+  coq.env.fresh-global (const SortP) SortProjection,
+  coq.env.fresh-global (const ClassP) ClassProjection,
+].
 
 % const Po : forall p1 .. pm T m1 .. mn, Extra  (Eg Extra = forall x y, x + y = y + z)
 % const C : forall p1 .. pm s, Extra
@@ -354,11 +381,15 @@ mk-coe-structure-body StructureF StructureT TC Coercion SortProjection ClassProj
      lp:PackPH (lp:SortP s) (lp:CoercionP (lp:SortP s) (lp:ClassP s)) }},
 ].
 
-% [declare-coercion P1 P2 C1 C2] declares a structure and a class coercion
-% from C1 to C2 given P1 P2 the two projections from the structure of C1
-pred declare-coercion i:term, i:term, i:hbclass, i:hbclass.
-declare-coercion SortProjection ClassProjection
-    (class FC StructureF FMLwP) (class TC StructureT TMLwP) :- std.do! [
+% [declare-coercion Drop P1 P2 C1 C2] declares a structure and a class coercion
+% from C1 to C2 given P1 P2 the two projections from the structure of C1.
+% When Drop is tt, both constants are declared with @dropunivs!: the terms
+% they are built from are refreshed (see refresh-univs) before use, this does
+% not change the constants since these terms are only elaborated as skeletons,
+% which disregards their universes. TMLwP is only used for its mixin names.
+pred declare-coercion i:bool, i:term, i:term, i:hbclass, i:hbclass.
+declare-coercion Drop SortProjection0 ClassProjection0
+    (class FC StructureF FMLwP0) (class TC StructureT TMLwP) :- std.do! [
 
   gref->modname StructureF 2 "_" ModNameF,
   gref->modname StructureT 2 "_" ModNameT,
@@ -367,16 +398,20 @@ declare-coercion SortProjection ClassProjection
 
   if-verbose (coq.say {header} "declare coercion" SName),
 
-  w-params.then FMLwP mk-fun mk-fun
+  refresh-univs-if Drop FMLwP0 FMLwPC,
+  w-params.then FMLwPC mk-fun mk-fun
     (mk-coe-class-body FC TC TMLwP) CoeBody,
   ErrorMessage is "The structures " ^ ModNameF ^ " and " ^ ModNameT ^ " are incompatible: the coercion between them cannot be synthesized",
   std.assert-ok! (coq.elaborate-skeleton CoeBody Ty CoeBody') ErrorMessage,
 
   if-verbose (coq.say {header} "declare coercion hint" CName),
 
-  log.coq.env.add-const-noimplicits CName CoeBody' Ty @transparent! C,
+  with-dropunivs Drop
+    (log.coq.env.add-const-noimplicits CName CoeBody' Ty @transparent! C),
   log.coq.coercion.declare (coercion (const C) 1 FC (grefclass TC)),
 
+  refresh-univs-if Drop (triple SortProjection0 ClassProjection0 FMLwP0)
+    (triple SortProjection ClassProjection FMLwP),
   coq.env.fresh-global (const C) Coercion,
   w-params.then FMLwP mk-fun ignore
     (mk-coe-structure-body StructureF StructureT TC Coercion SortProjection ClassProjection)
@@ -387,7 +422,9 @@ declare-coercion SortProjection ClassProjection
 
   if-verbose (coq.say {header} "declare unification hint" SName),
 
-  log.coq.env.add-const-noimplicits SName SCoeBody' STy @transparent! SC,
+  % only grefs and the number of parameters are used afterwards
+  with-dropunivs Drop
+    (log.coq.env.add-const-noimplicits SName SCoeBody' STy @transparent! SC),
   log.coq.coercion.declare (coercion (const SC) 0 StructureF (grefclass StructureT)),
 
   log.coq.CS.declare-instance SC,
@@ -447,16 +484,30 @@ declare-join (class C3 S3 MLwP3) (pr (class C1 S1 _) (class C2 S2 _)) (join C1 C
 % in the middle of existing ones. Possible fix: always declare all intermediate
 % possibilities but without proper names (requires the previous TODO about
 % aliasing already existing stuff).
-pred declare-unification-hints i:term, i:term, i:hbclass, o:list prop.
-declare-unification-hints SortProj ClassProj CurrentClass NewJoins :- std.do! [
+% [declare-unification-hints Drop Reobtain SortProj ClassProj CurrentClass
+%   NewJoins SortProj1 ClassProj1 MLwP1] declares the coercions and joins of
+% CurrentClass. With Drop, the coercions are declared with @dropunivs! (see
+% declare-coercion), and the terms of CurrentClass needed by the joins (which
+% are typechecked) and afterwards are re-obtained with Reobtain (see
+% reobtain-class) into SortProj1 ClassProj1 MLwP1
+pred declare-unification-hints i:bool, i:(term -> term -> mixins -> prop),
+  i:term, i:term, i:hbclass, o:list prop, o:term, o:term, o:mixins.
+declare-unification-hints Drop Reobtain SortProj ClassProj CurrentClass NewJoins
+    SortProj1 ClassProj1 MLwP1 :- std.do! [
   findall-classes All,
 
   std.filter All (sub-class? CurrentClass) AllSuper,
-  std.forall AllSuper (declare-coercion SortProj ClassProj CurrentClass),
+  std.forall AllSuper (declare-coercion Drop SortProj ClassProj CurrentClass),
 
-  findall-newjoins CurrentClass AllSuper TodoJoins,
+  CurrentClass = class ClassName Structure MLwP,
+  if (Drop = tt, not (AllSuper = []))
+     (Reobtain SortProj1 ClassProj1 MLwP1)
+     (SortProj1 = SortProj, ClassProj1 = ClassProj, MLwP1 = MLwP),
+  CurrentClass1 = class ClassName Structure MLwP1,
 
-  std.map TodoJoins (declare-join CurrentClass) NewJoins
+  findall-newjoins CurrentClass1 AllSuper TodoJoins,
+
+  std.map TodoJoins (declare-join CurrentClass1) NewJoins
 ].
 
 % For each mixin we declare a field and apply the mixin to its dependencies
